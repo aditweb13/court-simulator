@@ -12,16 +12,17 @@ Get the repo, database, backend, frontend scaffold, auth and CI running locally.
 
 ## Last Completed
 
-Guest session endpoint and an auth dependency for protected routes (Task 6 in `TASKS.md` - Batch A Complete).
+Vite + React + TypeScript + Tailwind scaffold with `globals.css` tokens from `Design.md` (Task 7 in `TASKS.md`).
 
 ## Next Step
 
-Vite + React + TypeScript + Tailwind scaffold with `globals.css` tokens from `Design.md` (Task 7 in `TASKS.md` - Batch B Start).
+Empty 3D canvas component rendering a placeholder floor (Task 8 in `TASKS.md`).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Scaffolded React 19 + Vite 6 + Tailwind CSS v4 frontend with exact Design.md courtroom design tokens and strict TypeScript · Validated production build with zero errors.
 2026-11-18 · Implemented get_current_user HTTPBearer auth dependency and guest session endpoint with anonymous UUID generation · Completes Batch A (Phase 1 Backend).
 2026-11-18 · Implemented Argon2id password hashing and PyJWT token generation with extra="forbid" Pydantic schemas · Adheres to Rules.md security requirements.
 2026-11-18 · Initialized Alembic with async SQLAlchemy 2.0 and created 001_users migration with vector and citext extensions · Matches Architecture.md data model.
@@ -45,7 +46,7 @@ Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 - [x] Scaffold FastAPI app with config, `/health` and response envelope
 - [x] Set up SQLAlchemy, Alembic and the `users` migration
 - [x] Implement register, login and guest endpoints with JWT
-- [ ] Scaffold frontend (Vite, React, TypeScript, Tailwind) with empty 3D canvas
+- [x] Scaffold frontend (Vite, React, TypeScript, Tailwind) with empty 3D canvas
 - [ ] Set up linting, type checks and test runners
 - [ ] Add GitHub Actions CI
 - [ ] Run version check, pin exact versions, log them here
