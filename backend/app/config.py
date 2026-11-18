@@ -25,10 +25,22 @@ class Settings(BaseSettings):
     jwt_expires_minutes: int = Field(default=60, alias="JWT_EXPIRES_MINUTES")
     jwt_algorithm: str = "HS256"
 
-    # LLM Providers (comma-separated keys or lists)
+    # LLM Providers
     gemini_api_keys: str = Field(default="", alias="GEMINI_API_KEYS")
     groq_api_keys: str = Field(default="", alias="GROQ_API_KEYS")
     openrouter_api_keys: str = Field(default="", alias="OPENROUTER_API_KEYS")
+    gemini_base_url: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta/openai",
+        alias="GEMINI_BASE_URL",
+    )
+    groq_base_url: str = Field(
+        default="https://api.groq.com/openai/v1",
+        alias="GROQ_BASE_URL",
+    )
+    openrouter_base_url: str = Field(
+        default="https://openrouter.ai/api/v1",
+        alias="OPENROUTER_BASE_URL",
+    )
     ollama_base_url: str = Field(default="http://localhost:11434", alias="OLLAMA_BASE_URL")
 
     # Chains
