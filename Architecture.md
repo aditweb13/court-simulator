@@ -182,6 +182,8 @@ CREATE TABLE knowledge_chunks (
   ipc_equivalent text,
   valid_from date, valid_to date,
   source text, license text,
+  embedding_model text,
+  ingested_at timestamptz NOT NULL DEFAULT now(),
   tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(title,'') || ' ' || body)) STORED,
   embedding vector(1024) NOT NULL
 );
