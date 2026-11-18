@@ -12,16 +12,17 @@ Get the repo, database, backend, frontend scaffold, auth and CI running locally.
 
 ## Last Completed
 
-Empty 3D canvas component rendering a placeholder floor (Task 8 in `TASKS.md`).
+Lint, type-check and test runners for backend and frontend (Task 9 in `TASKS.md`).
 
 ## Next Step
 
-Lint, type-check and test runners for backend and frontend (Task 9 in `TASKS.md`).
+GitHub Actions CI workflow running all checks (Task 10 in `TASKS.md`).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Configured Vitest, Testing Library, and ESLint flat config on frontend alongside ruff/mypy/pytest on backend · All suites passing.
 2026-11-18 · Integrated Three.js and React Three Fiber with CourtroomCanvas and Floor components · Complies with Rules.md 3D component isolation requirements.
 2026-11-18 · Scaffolded React 19 + Vite 6 + Tailwind CSS v4 frontend with exact Design.md courtroom design tokens and strict TypeScript · Validated production build with zero errors.
 2026-11-18 · Implemented get_current_user HTTPBearer auth dependency and guest session endpoint with anonymous UUID generation · Completes Batch A (Phase 1 Backend).
@@ -48,7 +49,7 @@ Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 - [x] Set up SQLAlchemy, Alembic and the `users` migration
 - [x] Implement register, login and guest endpoints with JWT
 - [x] Scaffold frontend (Vite, React, TypeScript, Tailwind) with empty 3D canvas
-- [ ] Set up linting, type checks and test runners
+- [x] Set up linting, type checks and test runners
 - [ ] Add GitHub Actions CI
 - [ ] Run version check, pin exact versions, log them here
 

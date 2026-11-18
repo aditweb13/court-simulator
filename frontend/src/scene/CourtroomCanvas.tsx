@@ -44,3 +44,4 @@ export function CourtroomCanvas({ className = "w-full h-full min-h-[450px]" }: C
     </div>
   );
 }
+
