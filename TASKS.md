@@ -15,7 +15,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P1] Lint, type-check and test runners for backend and frontend
 - [x] [P1] GitHub Actions CI workflow running all checks
 - [x] [P1] `scripts/check_versions.py` to compare baselines with registries, then pin and log versions in `Memory.md`
-- [ ] [P2] Key pool class with cooldown and escalating backoff, plus unit tests
+- [x] [P2] Key pool class with cooldown and escalating backoff, plus unit tests
 - [ ] [P2] Provider client for OpenAI-compatible endpoints (Gemini, Groq, OpenRouter, Ollama)
 - [ ] [P2] Tier chain parser and `chat(tier, messages)` with failover
 - [ ] [P2] JSON validation with one retry, then fall through the chain
