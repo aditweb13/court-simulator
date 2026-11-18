@@ -22,6 +22,12 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class GuestRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: Optional[str] = Field(default=None, min_length=1, max_length=50)
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: Optional[str] = None

@@ -9,7 +9,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P1] FastAPI app factory, settings loader, `/health` route and the response/error envelope
 - [x] [P1] SQLAlchemy session setup, Alembic init and the `users` migration
 - [x] [P1] Register and login endpoints with password hashing and JWT
-- [ ] [P1] Guest session endpoint and an auth dependency for protected routes
+- [x] [P1] Guest session endpoint and an auth dependency for protected routes
 - [ ] [P1] Vite + React + TypeScript + Tailwind scaffold with `globals.css` tokens from `Design.md`
 - [ ] [P1] Empty 3D canvas component rendering a placeholder floor
 - [ ] [P1] Lint, type-check and test runners for backend and frontend

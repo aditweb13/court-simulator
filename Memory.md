@@ -12,16 +12,17 @@ Get the repo, database, backend, frontend scaffold, auth and CI running locally.
 
 ## Last Completed
 
-Register and login endpoints with password hashing and JWT (Task 5 in `TASKS.md`).
+Guest session endpoint and an auth dependency for protected routes (Task 6 in `TASKS.md` - Batch A Complete).
 
 ## Next Step
 
-Guest session endpoint and an auth dependency for protected routes (Task 6 in `TASKS.md`).
+Vite + React + TypeScript + Tailwind scaffold with `globals.css` tokens from `Design.md` (Task 7 in `TASKS.md` - Batch B Start).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Implemented get_current_user HTTPBearer auth dependency and guest session endpoint with anonymous UUID generation · Completes Batch A (Phase 1 Backend).
 2026-11-18 · Implemented Argon2id password hashing and PyJWT token generation with extra="forbid" Pydantic schemas · Adheres to Rules.md security requirements.
 2026-11-18 · Initialized Alembic with async SQLAlchemy 2.0 and created 001_users migration with vector and citext extensions · Matches Architecture.md data model.
 2026-11-18 · Implemented standard Success/Error response envelopes and FastAPI factory with X-Request-ID middleware · Complies with Architecture.md section 4.

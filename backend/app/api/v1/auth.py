@@ -1,14 +1,23 @@
 """Authentication REST routes."""
 
+import uuid
+
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.core.errors import AppException, ErrorCode, get_request_id
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.models.user import User
 from app.db.session import get_db
-from app.schemas.auth import AuthResponse, LoginRequest, RegisterRequest, UserResponse
+from app.schemas.auth import (
+    AuthResponse,
+    GuestRequest,
+    LoginRequest,
+    RegisterRequest,
+    UserResponse,
+)
 from app.schemas.envelope import Meta, SuccessResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -26,7 +35,6 @@ async def register(
 ) -> SuccessResponse[AuthResponse]:
     req_id = get_request_id(request)
 
-    # Check for existing email
     stmt = select(User).where(User.email == body.email)
     result = await db.execute(stmt)
     existing_user = result.scalar_one_or_none()
@@ -37,7 +45,6 @@ async def register(
             status_code=status.HTTP_409_CONFLICT,
         )
 
-    # Create new user
     user = User(
         email=body.email,
         password_hash=hash_password(body.password),
@@ -100,5 +107,67 @@ async def login(
 
     return SuccessResponse(
         data=AuthResponse(access_token=token, token_type="bearer", user=user_resp),
+        meta=Meta(request_id=req_id),
+    )
+
+
+@router.post(
+    "/guest",
+    response_model=SuccessResponse[AuthResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def guest_session(
+    body: GuestRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[AuthResponse]:
+    req_id = get_request_id(request)
+
+    short_id = uuid.uuid4().hex[:6].upper()
+    display_name = body.display_name or f"Guest-{short_id}"
+
+    user = User(
+        email=None,
+        password_hash=None,
+        display_name=display_name,
+        is_guest=True,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    token = create_access_token(subject=user.id, is_guest=True)
+    user_resp = UserResponse(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        is_guest=user.is_guest,
+        created_at=user.created_at,
+    )
+
+    return SuccessResponse(
+        data=AuthResponse(access_token=token, token_type="bearer", user=user_resp),
+        meta=Meta(request_id=req_id),
+    )
+
+
+@router.get(
+    "/me",
+    response_model=SuccessResponse[UserResponse],
+)
+async def get_me(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+) -> SuccessResponse[UserResponse]:
+    req_id = get_request_id(request)
+    user_resp = UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        display_name=current_user.display_name,
+        is_guest=current_user.is_guest,
+        created_at=current_user.created_at,
+    )
+    return SuccessResponse(
+        data=user_resp,
         meta=Meta(request_id=req_id),
     )
