@@ -12,16 +12,17 @@ Get the repo, database, backend, frontend scaffold, auth and CI running locally.
 
 ## Last Completed
 
-Lint, type-check and test runners for backend and frontend (Task 9 in `TASKS.md`).
+GitHub Actions CI workflow running all checks (Task 10 in `TASKS.md`).
 
 ## Next Step
 
-GitHub Actions CI workflow running all checks (Task 10 in `TASKS.md`).
+`scripts/check_versions.py`, pin exact versions and log them in `Memory.md` (Task 11 in `TASKS.md`).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Created GitHub Actions CI matrix with PostgreSQL 17 + pgvector service container, Python 3.12, Node 22 LTS, and complete lint/type/test/build validation.
 2026-11-18 · Configured Vitest, Testing Library, and ESLint flat config on frontend alongside ruff/mypy/pytest on backend · All suites passing.
 2026-11-18 · Integrated Three.js and React Three Fiber with CourtroomCanvas and Floor components · Complies with Rules.md 3D component isolation requirements.
 2026-11-18 · Scaffolded React 19 + Vite 6 + Tailwind CSS v4 frontend with exact Design.md courtroom design tokens and strict TypeScript · Validated production build with zero errors.
@@ -50,7 +51,7 @@ Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 - [x] Implement register, login and guest endpoints with JWT
 - [x] Scaffold frontend (Vite, React, TypeScript, Tailwind) with empty 3D canvas
 - [x] Set up linting, type checks and test runners
-- [ ] Add GitHub Actions CI
+- [x] Add GitHub Actions CI
 - [ ] Run version check, pin exact versions, log them here
 
 ### Later phases (expand the checklist from `Phases.md` when you reach each one)
