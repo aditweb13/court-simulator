@@ -39,6 +39,20 @@ class AppException(Exception):
         self.details = details or {}
 
 
+class LLMUnavailable(AppException):
+    def __init__(
+        self,
+        message: str = "All LLM providers in the chain exhausted",
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            code=ErrorCode.LLM_UNAVAILABLE,
+            message=message,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            details=details,
+        )
+
+
 def get_request_id(request: Request) -> str:
     req_id = getattr(request.state, "request_id", None)
     if not req_id:
