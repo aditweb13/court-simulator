@@ -99,6 +99,63 @@ def test_validate_section() -> None:
     invalid_body = RawSection(act="BSA", section_no="3", title="Evidence", body="   ")
     assert validate_section(invalid_body) is False
 
+
+def test_verify_act_in_sources() -> None:
+    from app.rag.chunker import verify_act_in_sources
+
+    assert verify_act_in_sources("BNS") is True
+    assert verify_act_in_sources("BNSS") is True
+    assert verify_act_in_sources("BSA") is True
+    assert verify_act_in_sources("CONSTITUTION") is True
+    assert verify_act_in_sources("NONEXISTENT_ACT_XYZ") is False
+
+
+def test_strip_gazette_noise() -> None:
+    from app.rag.chunker import strip_gazette_noise
+
+    noisy = (
+        "THE GAZETTE OF INDIA : EXTRAORDINARY\n"
+        "PART II — SECTION 1\n"
+        "PUBLISHED BY AUTHORITY\n"
+        "Section 103. Murder punishment.\n"
+        "MINISTRY OF LAW AND JUSTICE\n"
+    )
+    cleaned = strip_gazette_noise(noisy)
+    assert "EXTRAORDINARY" not in cleaned
+    assert "AUTHORITY" not in cleaned
+    assert "Section 103. Murder punishment." in cleaned
+
+
+def test_split_long_section_at_subsections() -> None:
+    from app.rag.chunker import split_long_section
+
+    long_body = (
+        "(1) First subsection with substantive criminal law text detailing the offence.\n\n"
+        "(2) Second subsection with additional aggravating factors and exceptions.\n\n"
+        "(3) Third subsection with sentencing parameters and minimum penalties."
+    )
+    section = RawSection(
+        act="BNS",
+        section_no="103",
+        title="Punishment for murder",
+        body=long_body,
+    )
+
+    # Force splitting by passing a low max_tokens
+    chunks = split_long_section(
+        section,
+        max_tokens=20,
+        token_counter=lambda text: len(text.split()),
+    )
+
+    assert len(chunks) > 1
+    for i, piece in enumerate(chunks):
+        assert piece.act == "BNS"
+        assert piece.parent_section == "103"
+        assert f"Part {i + 1}/" in piece.section_no
+        assert "Punishment for murder" in piece.title
+
+
     # Too short body
     too_short = RawSection(act="BSA", section_no="3", title="Evidence", body="Short")
     assert validate_section(too_short) is False

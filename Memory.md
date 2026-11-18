@@ -4,24 +4,25 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 3: Law knowledge base and retrieval (P1 Core Features)
+Phase 3: Law knowledge base and retrieval (Batch A)
 
 ## Active Goal
 
-Ingest statutory acts (BNS, BNSS, BSA, Constitution) and build hybrid retrieval with local embedding and reranking.
+Implement Batch A (Phase 3 Law Knowledge Base): SOURCES.md, PDF/text parser with 512-token chunking, idempotent upsert ingestion, fake embedder/reranker wrappers, hybrid retrieval with RRF, citation checker, and 50-question eval set.
 
 ## Last Completed
 
-Task 20 (`TASKS.md`): Legal act chunker, normalizer, and ingestion script (`scripts/ingest_law.py`, `backend/app/rag/chunker.py`), plus `data/law_corpus/sample_corpus.json` and documentation.
+P0 blocker milestone completed (19/19 tasks). Ingestion parser scaffolded.
 
 ## Next Step
 
-Ingest full statutory acts into `knowledge_chunks` and implement the IPC to BNS mapping loader.
+Set up `data/law_corpus/SOURCES.md`, verify `data/law_corpus/raw/` contents, and install pre-approved `pymupdf`.
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Authorized sequential execution of P1 core features across Phases 3 to 7 (Batches A through E) with checkpoints after each batch · Explicit user exception to Rules.md single-phase constraint.
 2026-11-18 · Implemented statutory act chunker and CLI ingestion script under Section 52(1)(q) Indian Copyright Act public domain provisions · Complies with Rules.md requirement to source official legislative text without memorization.
 2026-11-18 · Created cases, evidence, and witnesses models and migration 004_cases_evidence_witnesses with CASCADE foreign keys and reliability check constraint · Implements Architecture.md section 3 data model.
 2026-11-18 · Created knowledge_chunks model and migration 003_knowledge_chunks with HNSW vector, GIN tsv, and lookup indexes, plus added embedding_model and ingested_at columns · Fulfills pre-agreed schema enhancement decision and updated Architecture.md.
