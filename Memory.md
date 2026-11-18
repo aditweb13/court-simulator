@@ -12,16 +12,18 @@ Get the repo, database, backend, frontend scaffold, auth and CI running locally.
 
 ## Last Completed
 
-Added `docker-compose.yml` (Postgres 17 + pgvector) and `.env.example` with all variable names (Task 2 in `TASKS.md`).
+FastAPI app factory, settings loader, `/health` route and the response/error envelope (Task 3 in `TASKS.md`).
 
 ## Next Step
 
-FastAPI app factory, settings loader, `/health` route and the response/error envelope (Task 3 in `TASKS.md`).
+SQLAlchemy session setup, Alembic init and the `users` migration (Task 4 in `TASKS.md`).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Implemented standard Success/Error response envelopes and FastAPI factory with X-Request-ID middleware · Complies with Architecture.md section 4.
+2026-11-18 · Authorized cross-phase batch execution for P0 tasks (Batches A, B, C, D) with checkpoint after each batch · User explicit exception to Rules.md.
 2026-11-18 · Selected pgvector/pgvector:pg17 Docker image with healthcheck and persistent volume · Fulfills ADR-1 requirement for PostgreSQL 17 + pgvector.
 2026-11-18 · Initialized Git repository and created directory layout with .gitkeep placeholders · Establish project baseline according to Architecture.md directory specifications.
 
@@ -37,7 +39,7 @@ Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 ### Phase 1: Project setup, scaffold and auth
 - [x] Create repo structure and root `README.md`
 - [x] Add `docker-compose.yml` (Postgres 17 + pgvector) and `.env.example`
-- [ ] Scaffold FastAPI app with config, `/health` and response envelope
+- [x] Scaffold FastAPI app with config, `/health` and response envelope
 - [ ] Set up SQLAlchemy, Alembic and the `users` migration
 - [ ] Implement register, login and guest endpoints with JWT
 - [ ] Scaffold frontend (Vite, React, TypeScript, Tailwind) with empty 3D canvas

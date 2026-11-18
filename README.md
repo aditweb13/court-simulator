@@ -96,3 +96,4 @@ verdict/
 ## Disclaimer
 
 Verdict is an educational and entertainment simulation, **not legal advice**. Indian criminal trials in reality are decided exclusively by judges; the jury is an intentional game feature designed to explore multi-agent deliberation and bias analysis.
+

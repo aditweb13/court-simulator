@@ -6,7 +6,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 
 - [x] [P1] Create repo structure from `Architecture.md` and write the root `README.md`
 - [x] [P1] Add `docker-compose.yml` (Postgres 17 + pgvector) and `.env.example` with all variable names
-- [ ] [P1] FastAPI app factory, settings loader, `/health` route and the response/error envelope
+- [x] [P1] FastAPI app factory, settings loader, `/health` route and the response/error envelope
 - [ ] [P1] SQLAlchemy session setup, Alembic init and the `users` migration
 - [ ] [P1] Register and login endpoints with password hashing and JWT
 - [ ] [P1] Guest session endpoint and an auth dependency for protected routes
