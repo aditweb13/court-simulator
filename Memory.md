@@ -4,24 +4,27 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 1: Project setup, scaffold and auth
+Phase 2: LLM router with failover (Batch C complete)
 
 ## Active Goal
 
-Get the repo, database, backend, frontend scaffold, auth and CI running locally.
+Complete P0 blocker tasks: finished Batch C (LLM Router), prepare for Batch D (Schema migrations: knowledge_chunks, cases/evidence/witnesses).
 
 ## Last Completed
 
-`scripts/check_versions.py`, pinned exact versions and logged them in `Memory.md` (Task 11 in `TASKS.md` — Batch B Complete).
+Batch C complete (Tasks 12-17): KeyPool, OpenAI-compatible client, tier chain parser, chat() failover router, Pydantic JSON retry, forced-failover integration test suite (94% coverage on app.llm), and llm_calls migration with key_alias logging.
 
 ## Next Step
 
-Checkpoint: verify Phase 1 "Done when" line, then await approval for Batch C (Phase 2 LLM Router).
+Batch D: Schema migrations (Tasks 18-19) — knowledge_chunks with HNSW/GIN indexes, then cases/evidence/witnesses plus case JSON schema.
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Created llm_calls migration (002_llm_calls) with trial_id as nullable UUID without FK · Pre-agreed decision; trials table does not exist until Phase 5.
+2026-11-18 · Implemented structured JSON retry and provider fallthrough with 94% test coverage on app.llm · Meets prompt specification and Rules.md structured output mandate.
+2026-11-18 · Implemented KeyPool escalating cooldown min(60 * 2**fails, 86400) and OpenAI-compatible client for Gemini, Groq, OpenRouter, Ollama · Ensures zero outage on free tier quota exhaustion.
 2026-11-18 · Pinned exact versions in backend/requirements.txt and frontend/package.json via check_versions.py · Architecture.md says to check registries and pin exact patch versions.
 2026-11-18 · Created GitHub Actions CI matrix with PostgreSQL 17 + pgvector service container, Python 3.12, Node 22 LTS, and complete lint/type/test/build validation.
 2026-11-18 · Configured Vitest, Testing Library, and ESLint flat config on frontend alongside ruff/mypy/pytest on backend · All suites passing.
@@ -87,8 +90,15 @@ Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 | Vitest | latest | 5.1.1 |
 | ESLint | latest | 10.15.0 |
 
+### Phase 2: LLM router with failover
+- [x] Key pool class with cooldown and escalating backoff, plus unit tests
+- [x] Provider client for OpenAI-compatible endpoints (Gemini, Groq, OpenRouter, Ollama)
+- [x] Tier chain parser and `chat(tier, messages)` with failover
+- [x] JSON validation with one retry, then fall through the chain
+- [x] Forced-failover tests: bad key, quota, timeout, all providers down (94% coverage)
+- [x] `llm_calls` migration and call logging with `key_alias`
+
 ### Later phases (expand the checklist from `Phases.md` when you reach each one)
-- [ ] Phase 2: LLM router with failover
 - [ ] Phase 3: Law knowledge base and retrieval
 - [ ] Phase 4: Cases and ground truth
 - [ ] Phase 5: Gateway, orchestrator and a live judge in 3D
