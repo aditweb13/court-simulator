@@ -12,16 +12,17 @@ Get the repo, database, backend, frontend scaffold, auth and CI running locally.
 
 ## Last Completed
 
-FastAPI app factory, settings loader, `/health` route and the response/error envelope (Task 3 in `TASKS.md`).
+SQLAlchemy session setup, Alembic init and the `users` migration (Task 4 in `TASKS.md`).
 
 ## Next Step
 
-SQLAlchemy session setup, Alembic init and the `users` migration (Task 4 in `TASKS.md`).
+Register and login endpoints with password hashing and JWT (Task 5 in `TASKS.md`).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Initialized Alembic with async SQLAlchemy 2.0 and created 001_users migration with vector and citext extensions · Matches Architecture.md data model.
 2026-11-18 · Implemented standard Success/Error response envelopes and FastAPI factory with X-Request-ID middleware · Complies with Architecture.md section 4.
 2026-11-18 · Authorized cross-phase batch execution for P0 tasks (Batches A, B, C, D) with checkpoint after each batch · User explicit exception to Rules.md.
 2026-11-18 · Selected pgvector/pgvector:pg17 Docker image with healthcheck and persistent volume · Fulfills ADR-1 requirement for PostgreSQL 17 + pgvector.
@@ -40,7 +41,7 @@ Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 - [x] Create repo structure and root `README.md`
 - [x] Add `docker-compose.yml` (Postgres 17 + pgvector) and `.env.example`
 - [x] Scaffold FastAPI app with config, `/health` and response envelope
-- [ ] Set up SQLAlchemy, Alembic and the `users` migration
+- [x] Set up SQLAlchemy, Alembic and the `users` migration
 - [ ] Implement register, login and guest endpoints with JWT
 - [ ] Scaffold frontend (Vite, React, TypeScript, Tailwind) with empty 3D canvas
 - [ ] Set up linting, type checks and test runners
