@@ -22,7 +22,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P2] Forced-failover tests: bad key, quota, timeout, all providers down
 - [x] [P2] `llm_calls` migration and call logging with `key_alias`
 - [x] [P3] `knowledge_chunks` migration with HNSW, GIN and lookup indexes
-- [ ] [P4] Case, evidence and witness migrations and the case JSON schema
+- [x] [P4] Case, evidence and witness migrations and the case JSON schema
 
 ## P1: core features
 
