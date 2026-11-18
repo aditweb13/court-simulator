@@ -26,7 +26,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 
 ## P1: core features
 
-- [ ] [P3] Ingestion script: clean and chunk one act by section with metadata
+- [x] [P3] Ingestion script: clean and chunk one act by section with metadata
 - [ ] [P3] Ingest BNS, then BNSS, then BSA (one task each, check licenses first)
 - [ ] [P3] Ingest the Constitution, with Part III and Articles 20-22 tagged
 - [ ] [P3] IPC to BNS mapping table and loader
