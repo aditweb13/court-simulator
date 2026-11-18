@@ -1,22 +1,20 @@
 """CLI script to clean, chunk, and ingest statutory acts into PostgreSQL.
 
 Usage:
-    python scripts/ingest_law.py --file data/law_corpus/bns.json --act BNS --dry-run
+    python scripts/ingest_law.py --file data/law_corpus/sample_corpus.json --dry-run
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
-import json
-import os
 import sys
 from pathlib import Path
 
 # Add backend directory to sys.path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
-from app.rag.chunker import parse_act_json, parse_act_text, validate_section  # noqa: E402
+from app.rag.chunker import parse_act_json, parse_act_text, validate_section
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,8 +60,34 @@ async def run_ingestion(file_path: Path, act_name: str, dry_run: bool) -> int:
         print("\n[Dry Run] Validation successful. No database records modified.")
         return 0
 
-    print(f"\nReady to ingest {len(valid_sections)} sections into knowledge_chunks.")
-    return 0
+    print(f"\nIngesting {len(valid_sections)} sections into knowledge_chunks...")
+    from app.db.models.knowledge import KnowledgeChunk
+    from app.db.session import async_session_maker
+
+    try:
+        async with async_session_maker() as session, session.begin():
+            for sec in valid_sections:
+                chunk = KnowledgeChunk(
+                    domain=sec.domain,
+                    audience=sec.audience,
+                    act=sec.act,
+                    section_no=sec.section_no,
+                    title=sec.title,
+                    body=sec.body,
+                    ipc_equivalent=sec.ipc_equivalent,
+                    valid_from=sec.valid_from,
+                    valid_to=sec.valid_to,
+                    source=sec.source,
+                    license=sec.license,
+                    embedding_model="placeholder",
+                    embedding=[0.0] * 1024,
+                )
+                session.add(chunk)
+        print("Ingestion complete: all sections inserted.")
+        return 0
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"Database insertion failed: {exc}", file=sys.stderr)
+        return 1
 
 
 def main() -> None:
@@ -76,4 +100,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
