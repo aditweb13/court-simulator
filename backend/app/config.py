@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = Field(
-        default="postgresql+psycopg://verdict:verdict_dev@localhost:5432/verdict",
+        default="postgresql+psycopg://verdict:verdict_dev@localhost:5434/verdict",
         alias="DATABASE_URL",
     )
 

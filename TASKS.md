@@ -27,9 +27,9 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 ## P1: core features
 
 - [x] [P3] Ingestion script: clean and chunk one act by section with metadata
-- [ ] [P3] Ingest BNS, then BNSS, then BSA (one task each, check licenses first)
-- [ ] [P3] Ingest the Constitution, with Part III and Articles 20-22 tagged
-- [ ] [P3] IPC to BNS mapping table and loader
+- [x] [P3] Ingest BNS, then BNSS, then BSA (one task each, check licenses first)
+- [x] [P3] Ingest the Constitution, with Part III and Articles 20-22 tagged
+- [x] [P3] IPC to BNS mapping table and loader
 - [ ] [P3] Local embedding model wrapper (bge-m3) with batching
 - [ ] [P3] Reranker wrapper (bge-reranker-v2-m3)
 - [ ] [P3] Hybrid retrieval function with `audience` and `domain` filters

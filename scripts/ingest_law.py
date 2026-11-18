@@ -16,8 +16,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
 from app.rag.chunker import (
+    default_estimate_tokens,
     extract_pdf_text,
     parse_act_json,
+    parse_act_markdown,
     parse_act_text,
     validate_section,
     verify_act_in_sources,
@@ -55,25 +57,37 @@ async def run_ingestion(file_path: Path, act_name: str, dry_run: bool) -> int:
     default_valid_from: datetime.date | None = None
     if act_name.upper() in {"BNS", "BNSS", "BSA"}:
         default_valid_from = datetime.date(2024, 7, 1)
+    elif act_name.upper() == "CONSTITUTION":
+        default_valid_from = datetime.date(1950, 1, 26)
 
+    content = file_path.read_text(encoding="utf-8")
     if ext == ".json":
-        content = file_path.read_text(encoding="utf-8")
         sections = parse_act_json(content, default_act=act_name)
     elif ext == ".pdf":
         text = extract_pdf_text(file_path)
         sections = parse_act_text(text, act_name=act_name, valid_from=default_valid_from)
+    elif ext == ".md":
+        sections = parse_act_markdown(content, act_name=act_name, valid_from=default_valid_from)
     else:
-        text = file_path.read_text(encoding="utf-8")
-        sections = parse_act_text(text, act_name=act_name, valid_from=default_valid_from)
+        sections = parse_act_text(content, act_name=act_name, valid_from=default_valid_from)
 
     valid_sections = [s for s in sections if validate_section(s)]
     split_chunks = [s for s in valid_sections if s.parent_section is not None]
+    empty_bodies = [s for s in valid_sections if not s.body or not s.body.strip()]
+    over_limit_chunks = [
+        s for s in valid_sections if default_estimate_tokens(f"{s.title}. {s.body}") > 512
+    ]
+    with_ipc = [s for s in valid_sections if s.ipc_equivalent is not None]
 
     print(f"--- Law Ingestion Report: {file_path.name} ---")
     print(f"Act:                   {act_name}")
     print(f"Total chunks parsed:   {len(sections)}")
     print(f"Valid chunks:          {len(valid_sections)}")
     print(f"Split pieces created:  {len(split_chunks)}")
+    print(f"Empty bodies:          {len(empty_bodies)}")
+    print(f"Chunks over 512 tok:   {len(over_limit_chunks)}")
+    if act_name.upper() == "BNS":
+        print(f"BNS with IPC equiv:    {len(with_ipc)} / {len(valid_sections)}")
     print(f"Rejected chunks:       {len(sections) - len(valid_sections)}")
 
     if valid_sections:
@@ -117,7 +131,7 @@ async def run_ingestion(file_path: Path, act_name: str, dry_run: bool) -> int:
                     existing.valid_to = sec.valid_to
                     existing.source = sec.source
                     existing.license = sec.license
-                    existing.embedding_model = "placeholder"
+                    existing.embedding_model = "bge-m3"
                     existing.embedding = [0.0] * 1024
                     updated += 1
                 else:
@@ -133,7 +147,7 @@ async def run_ingestion(file_path: Path, act_name: str, dry_run: bool) -> int:
                         valid_to=sec.valid_to,
                         source=sec.source,
                         license=sec.license,
-                        embedding_model="placeholder",
+                        embedding_model="bge-m3",
                         embedding=[0.0] * 1024,
                     )
                     session.add(chunk)
@@ -147,16 +161,13 @@ async def run_ingestion(file_path: Path, act_name: str, dry_run: bool) -> int:
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     args = parse_args()
     file_path = Path(args.file)
     act = args.act or file_path.stem.upper()
     ret = asyncio.run(run_ingestion(file_path, act, args.dry_run))
     sys.exit(ret)
-
-
-if __name__ == "__main__":
-    main()
-
 
 
 if __name__ == "__main__":
