@@ -181,3 +181,4 @@ async def test_call_provider_transport_error() -> None:
 
     assert resp.outcome == AttemptOutcome.TIMEOUT
     assert "Transport error" in (resp.error_message or "")
+

@@ -178,3 +178,4 @@ async def call_provider(
 
     async with httpx.AsyncClient() as new_client:
         return await _send(new_client)
+

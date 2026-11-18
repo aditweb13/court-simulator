@@ -111,3 +111,4 @@ async def test_chat_all_providers_fail_raises_llm_unavailable() -> None:
 
     assert exc_info.value.code.value == "LLM_UNAVAILABLE"
     assert exc_info.value.status_code == 503
+

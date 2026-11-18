@@ -137,3 +137,4 @@ def test_classify_status() -> None:
     assert classify_status(429) == AttemptOutcome.ERROR
     assert classify_status(500) == AttemptOutcome.ERROR
     assert classify_status(503) == AttemptOutcome.ERROR
+
