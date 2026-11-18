@@ -12,16 +12,17 @@ Get the repo, database, backend, frontend scaffold, auth and CI running locally.
 
 ## Last Completed
 
-Vite + React + TypeScript + Tailwind scaffold with `globals.css` tokens from `Design.md` (Task 7 in `TASKS.md`).
+Empty 3D canvas component rendering a placeholder floor (Task 8 in `TASKS.md`).
 
 ## Next Step
 
-Empty 3D canvas component rendering a placeholder floor (Task 8 in `TASKS.md`).
+Lint, type-check and test runners for backend and frontend (Task 9 in `TASKS.md`).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Integrated Three.js and React Three Fiber with CourtroomCanvas and Floor components · Complies with Rules.md 3D component isolation requirements.
 2026-11-18 · Scaffolded React 19 + Vite 6 + Tailwind CSS v4 frontend with exact Design.md courtroom design tokens and strict TypeScript · Validated production build with zero errors.
 2026-11-18 · Implemented get_current_user HTTPBearer auth dependency and guest session endpoint with anonymous UUID generation · Completes Batch A (Phase 1 Backend).
 2026-11-18 · Implemented Argon2id password hashing and PyJWT token generation with extra="forbid" Pydantic schemas · Adheres to Rules.md security requirements.

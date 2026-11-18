@@ -11,7 +11,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P1] Register and login endpoints with password hashing and JWT
 - [x] [P1] Guest session endpoint and an auth dependency for protected routes
 - [x] [P1] Vite + React + TypeScript + Tailwind scaffold with `globals.css` tokens from `Design.md`
-- [ ] [P1] Empty 3D canvas component rendering a placeholder floor
+- [x] [P1] Empty 3D canvas component rendering a placeholder floor
 - [ ] [P1] Lint, type-check and test runners for backend and frontend
 - [ ] [P1] GitHub Actions CI workflow running all checks
 - [ ] [P1] `scripts/check_versions.py` to compare baselines with registries, then pin and log versions in `Memory.md`
