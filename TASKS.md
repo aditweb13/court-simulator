@@ -5,7 +5,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 ## P0: blockers and must-haves
 
 - [x] [P1] Create repo structure from `Architecture.md` and write the root `README.md`
-- [ ] [P1] Add `docker-compose.yml` (Postgres 17 + pgvector) and `.env.example` with all variable names
+- [x] [P1] Add `docker-compose.yml` (Postgres 17 + pgvector) and `.env.example` with all variable names
 - [ ] [P1] FastAPI app factory, settings loader, `/health` route and the response/error envelope
 - [ ] [P1] SQLAlchemy session setup, Alembic init and the `users` migration
 - [ ] [P1] Register and login endpoints with password hashing and JWT
