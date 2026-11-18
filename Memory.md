@@ -4,24 +4,25 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-P0 Blockers Complete (Batches A, B, C, D finished across Phases 1–4)
+Phase 3: Law knowledge base and retrieval (P1 Core Features)
 
 ## Active Goal
 
-All 19 P0 blocker & must-have tasks are implemented and verified. Ready to begin P1 core features (Phase 3: Law Knowledge Base and Ingestion).
+Ingest statutory acts (BNS, BNSS, BSA, Constitution) and build hybrid retrieval with local embedding and reranking.
 
 ## Last Completed
 
-Batch D complete (Tasks 18-19): `knowledge_chunks` migration with HNSW vector, GIN tsv, and lookup indexes; `cases`, `evidence`, and `witnesses` models, migration `004_cases_evidence_witnesses`, and Pydantic v2 `CaseSchema`.
+Task 20 (`TASKS.md`): Legal act chunker, normalizer, and ingestion script (`scripts/ingest_law.py`, `backend/app/rag/chunker.py`), plus `data/law_corpus/sample_corpus.json` and documentation.
 
 ## Next Step
 
-Checkpoint: Present completion report for all 19 P0 blocker tasks. Wait for user instructions before starting P1 core features (Task 20 / Ingestion script in `TASKS.md`).
+Ingest full statutory acts into `knowledge_chunks` and implement the IPC to BNS mapping loader.
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Implemented statutory act chunker and CLI ingestion script under Section 52(1)(q) Indian Copyright Act public domain provisions · Complies with Rules.md requirement to source official legislative text without memorization.
 2026-11-18 · Created cases, evidence, and witnesses models and migration 004_cases_evidence_witnesses with CASCADE foreign keys and reliability check constraint · Implements Architecture.md section 3 data model.
 2026-11-18 · Created knowledge_chunks model and migration 003_knowledge_chunks with HNSW vector, GIN tsv, and lookup indexes, plus added embedding_model and ingested_at columns · Fulfills pre-agreed schema enhancement decision and updated Architecture.md.
 2026-11-18 · Created llm_calls migration (002_llm_calls) with trial_id as nullable UUID without FK · Pre-agreed decision; trials table does not exist until Phase 5.
