@@ -12,16 +12,23 @@ Implement Batch A (Phase 3 Law Knowledge Base): SOURCES.md, PDF/text parser with
 
 ## Last Completed
 
-P0 blocker milestone completed (19/19 tasks). Ingestion parser scaffolded.
+Created `data/law_corpus/SOURCES.md`, created directory `data/law_corpus/raw/`, enhanced `scripts/ingest_law.py` and `backend/app/rag/chunker.py` with SOURCES.md gate, PyMuPDF extraction, sub-section token splitting (>512 tokens), idempotent upsert on `(act, section_no, valid_from)`, added approved [P5] tasks to `TASKS.md`. All 68 backend unit tests passing.
 
 ## Next Step
 
-Set up `data/law_corpus/SOURCES.md`, verify `data/law_corpus/raw/` contents, and install pre-approved `pymupdf`.
+Awaiting raw law files from user in `data/law_corpus/raw/`:
+- `bns.pdf` (or `.txt`)
+- `bnss.pdf` (or `.txt`)
+- `bsa.pdf` (or `.txt`)
+- `constitution.pdf` (or `.txt`)
+- `ipc_bns_map.json` (or `.txt` / `.csv`)
+Once placed, execute ingestion of BNS, BNSS, BSA, Constitution, and proceed with IPC-BNS mapping, embedder/reranker wrappers, hybrid retrieval, and 50-question eval set.
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Implemented SOURCES.md gate, PyMuPDF extraction, sub-section token splitting (>512 tokens) and idempotent upsert on (act, section_no, valid_from) · Fulfills law ingestion requirements for Batch A.
 2026-11-18 · Authorized sequential execution of P1 core features across Phases 3 to 7 (Batches A through E) with checkpoints after each batch · Explicit user exception to Rules.md single-phase constraint.
 2026-11-18 · Implemented statutory act chunker and CLI ingestion script under Section 52(1)(q) Indian Copyright Act public domain provisions · Complies with Rules.md requirement to source official legislative text without memorization.
 2026-11-18 · Created cases, evidence, and witnesses models and migration 004_cases_evidence_witnesses with CASCADE foreign keys and reliability check constraint · Implements Architecture.md section 3 data model.
