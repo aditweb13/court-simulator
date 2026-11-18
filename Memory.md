@@ -4,24 +4,26 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 2: LLM router with failover (Batch C complete)
+P0 Blockers Complete (Batches A, B, C, D finished across Phases 1–4)
 
 ## Active Goal
 
-Complete P0 blocker tasks: finished Batch C (LLM Router), prepare for Batch D (Schema migrations: knowledge_chunks, cases/evidence/witnesses).
+All 19 P0 blocker & must-have tasks are implemented and verified. Ready to begin P1 core features (Phase 3: Law Knowledge Base and Ingestion).
 
 ## Last Completed
 
-Batch C complete (Tasks 12-17): KeyPool, OpenAI-compatible client, tier chain parser, chat() failover router, Pydantic JSON retry, forced-failover integration test suite (94% coverage on app.llm), and llm_calls migration with key_alias logging.
+Batch D complete (Tasks 18-19): `knowledge_chunks` migration with HNSW vector, GIN tsv, and lookup indexes; `cases`, `evidence`, and `witnesses` models, migration `004_cases_evidence_witnesses`, and Pydantic v2 `CaseSchema`.
 
 ## Next Step
 
-Batch D: Schema migrations (Tasks 18-19) — knowledge_chunks with HNSW/GIN indexes, then cases/evidence/witnesses plus case JSON schema.
+Checkpoint: Present completion report for all 19 P0 blocker tasks. Wait for user instructions before starting P1 core features (Task 20 / Ingestion script in `TASKS.md`).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-18 · Created cases, evidence, and witnesses models and migration 004_cases_evidence_witnesses with CASCADE foreign keys and reliability check constraint · Implements Architecture.md section 3 data model.
+2026-11-18 · Created knowledge_chunks model and migration 003_knowledge_chunks with HNSW vector, GIN tsv, and lookup indexes, plus added embedding_model and ingested_at columns · Fulfills pre-agreed schema enhancement decision and updated Architecture.md.
 2026-11-18 · Created llm_calls migration (002_llm_calls) with trial_id as nullable UUID without FK · Pre-agreed decision; trials table does not exist until Phase 5.
 2026-11-18 · Implemented structured JSON retry and provider fallthrough with 94% test coverage on app.llm · Meets prompt specification and Rules.md structured output mandate.
 2026-11-18 · Implemented KeyPool escalating cooldown min(60 * 2**fails, 86400) and OpenAI-compatible client for Gemini, Groq, OpenRouter, Ollama · Ensures zero outage on free tier quota exhaustion.
@@ -98,9 +100,15 @@ Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 - [x] Forced-failover tests: bad key, quota, timeout, all providers down (94% coverage)
 - [x] `llm_calls` migration and call logging with `key_alias`
 
+### Phase 3: Law knowledge base and retrieval (Foundation)
+- [x] `knowledge_chunks` migration with HNSW, GIN and lookup indexes
+
+### Phase 4: Cases and ground truth (Foundation)
+- [x] Case, evidence and witness migrations and the case JSON schema
+
 ### Later phases (expand the checklist from `Phases.md` when you reach each one)
-- [ ] Phase 3: Law knowledge base and retrieval
-- [ ] Phase 4: Cases and ground truth
+- [ ] Phase 3: Law knowledge base and retrieval (Ingestion and retrieval functions)
+- [ ] Phase 4: Cases and ground truth (Handwritten cases and witness builder)
 - [ ] Phase 5: Gateway, orchestrator and a live judge in 3D
 - [ ] Phase 6: Lawyers, witnesses, objections and the record
 - [ ] Phase 7: Jury, verdict judges, voting and scoring
