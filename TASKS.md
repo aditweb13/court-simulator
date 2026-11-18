@@ -19,7 +19,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P2] Provider client for OpenAI-compatible endpoints (Gemini, Groq, OpenRouter, Ollama)
 - [x] [P2] Tier chain parser and `chat(tier, messages)` with failover
 - [x] [P2] JSON validation with one retry, then fall through the chain
-- [ ] [P2] Forced-failover tests: bad key, quota, timeout, all providers down
+- [x] [P2] Forced-failover tests: bad key, quota, timeout, all providers down
 - [ ] [P2] `llm_calls` migration and call logging with `key_alias`
 - [ ] [P3] `knowledge_chunks` migration with HNSW, GIN and lookup indexes
 - [ ] [P4] Case, evidence and witness migrations and the case JSON schema
