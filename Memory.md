@@ -4,54 +4,64 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 6: Lawyers, witnesses, objections, and the record (COMPLETED) -> Phase 7: Jurors and deliberation (NEXT)
+Phase 7: Jurors, verdict judges, voting and scoring (COMPLETED) -> Phase 8: Human lawyer mode & secondary polish (NEXT)
 
 ## Active Goal
 
-Phase 6 Definition of Done achieved:
-A full examination of one witness runs with at least one objection ruled on, the struck testimony is flagged, and the isolation tests pass.
+Phase 7 Definition of Done achieved:
+A full trial runs from opening to a cited verdict, the aggregator unit tests pass, no juror cites a struck turn, and the verdict is compared with the hidden truth.
 
-Ready to begin Phase 7 tasks:
+Completed Phase 7 tasks:
 1. Juror personas and the step-by-step reasoning prompt
 2. Juror retrieval limited to admitted, non-struck turns, plus its isolation test
 3. Deliberation rounds with a devil's advocate, run in parallel
 4. Private pre- and post-deliberation votes
-5. Verdict aggregation (unanimous / majority / hung)
-6. Bench of 3 verdict judges for non-jury trials (judicial mode)
-7. Sentences scaled to statutory ranges under BNS
+5. Three verdict judge agents with different philosophies (textualist, precedent, fairness)
+6. Aggregation module (0.5 × J + 0.5 × P, threshold, hung band, disagreement) with pure unit tests
+7. `votes` and `verdicts` migrations and persistence
+8. Truth comparison and the verdict event
+9. Rich frontend Verdict screen with reasoning, statutory citations, and truth reveal
 
 ## Last Completed
 
-Phase 6 (Lawyers, Witnesses, Objections, and the Record):
-- Adversarial context builders with strict information isolation:
-  - `build_prosecutor_context()`, `build_prosecutor_examination_prompt()`, `build_prosecutor_objection_prompt()`, `build_prosecutor_closing_prompt()`
-  - `build_defense_context()`, `build_defense_examination_prompt()`, `build_defense_objection_prompt()`, `build_defense_closing_prompt()`
-  - `build_witness_context()`, `build_witness_answer_prompt()` (strict memory slice isolation)
-  - `build_defendant_context()`, `build_defendant_answer_prompt()`
-- Pure statutory rules engine (`backend/app/rules/`):
-  - `objections.py`: VALID_OBJECTION_GROUNDS, statutory citations (hearsay BSA 55, leading BSA 146, relevance BSA 3-14, badgering BSA 154, speculation BSA 39, character BSA 50-52), `check_objection_quota()`, `is_leading_question_permitted()`.
-  - `turn_order.py`: `get_examining_lawyer()`, `get_opposing_party()`, `get_next_examination_stage()`, `ExaminationStage`.
-  - `admissibility.py`: `evaluate_evidence_admissibility()` (electronic records BSA 63 certificate, police confessions BSA 23, secondary evidence BSA 60).
-- Examination Node in LangGraph orchestrator (`examination_node()`):
-  - Direct examination (prosecutor asks, defense evaluates objection, judge rules, witness answers).
-  - Cross-examination (defense asks, prosecutor evaluates objection, judge rules on BSA 146(3) leading question allowance, witness answers).
-  - Redirect examination (prosecutor asks, defense evaluates objection, judge rules on BSA 146(1) leading question ban, witness answers).
-  - Sustained objections trigger `mark_turn_struck()`, flagging testimony as struck (`struck = True`) in the database.
-- Migration `006_create_turn_embeddings_table.py` and `TurnEmbedding` ORM model:
-  - Each turn is embedded via `get_embedder()` and stored in `turn_embeddings` with 1024-dim Vector, trial_id index, and HNSW cosine index.
-- 100% test coverage:
-  - 180 Python tests passing (unit tests for rules, context isolation, examination flow, sustained/overruled rulings, struck testimony flag).
-  - 12 Vitest frontend tests passing.
-  - `ruff check`, `ruff format`, `mypy` all completely clean (0 errors across 22 source files).
+Phase 7 (Jurors, Verdict Judges, Voting, and Scoring):
+- Database migrations & ORM:
+  - Migration `007_create_votes_and_verdicts_tables.py` creating `votes` (pre/final juror and verdict judge votes) and `verdicts` tables with foreign keys and indexes.
+  - `Vote` and `Verdict` SQLAlchemy models in `backend/app/db/models/trial.py`.
+- Pure voting aggregation module (`backend/app/voting/aggregation.py`):
+  - Formulas: $J = \frac{\text{guilty votes}}{\text{total juror votes}}$, $P = \frac{\sum \text{guilt\_probability}}{3}$, $\text{Score} = 0.5 \times J + 0.5 \times P$, $\text{Disagreement} = |J - P|$.
+  - Threshold & hung band: `guilty` if Score >= threshold; `not_guilty` if Score <= (threshold - hung_band); else `hung`.
+  - BNS statutory sentencing ranges (BNS 103(1), 318(4), 117(2)).
+  - Comprehensive unit test suite (`test_voting_aggregation.py`) covering all pure functions with 100% pass rate.
+- Information isolation for jurors & verdict judges:
+  - `build_juror_context()`: strictly filters to clean record (`admitted == True` and `struck == False`), admitted evidence, and strictly excludes secret `case.truth` and lawyer notes.
+  - `build_juror_vote_prompt()`: enforces step-by-step reasoning based on juror traits/style.
+  - `build_juror_deliberation_prompt()`: dynamic devil's advocate role to challenge consensus.
+  - `build_verdict_judge_context()`: clean record and statutory retrieval with `role="judge"`.
+  - `build_verdict_judge_prompt()`: distinct textualist, precedent, and constitutional fairness guidance.
+- Orchestrator graph integration:
+  - Added `deliberation_node()` and `verdict_node()` into LangGraph `StateGraph`.
+  - Parallel execution via `asyncio.gather()` for pre-votes, deliberation rounds, post-votes, and judicial opinions.
+  - Dispatches `VerdictEvent` and presiding judge pronouncement turn.
+- REST API:
+  - `GET /trials/{trial_id}/verdict` endpoint returning full verdict summary and vote breakdown.
+- Frontend:
+  - Rich `VerdictScreen.tsx` dialog with outcome badge, radial score gauge, threshold indicators, disagreement metrics, judicial opinions, and truth reveal tab.
+- Quality assurance:
+  - 193 backend pytest tests pass (0 failures).
+  - 15 frontend Vitest tests pass.
+  - Frontend typecheck clean (`tsc -b`).
+  - Ruff check & format clean (109 files formatted).
+  - Mypy check clean (34 source files).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
-2026-11-19 · Implemented complete adversarial examination node with direct, cross, and redirect loops, objection quotas, and struck testimony marking · Satisfies Phase 6 Definition of Done.
-2026-11-19 · Enforced Bharatiya Sakshya Adhiniyam, 2023 (BSA Section 146) leading question rules: sustained in direct/redirect, permitted in cross-examination · Adheres to Indian statutory courtroom procedure.
-2026-11-19 · Created turn_embeddings table (migration 006) and persisted embeddings inline during _persist_turn · Enables clean downstream semantic retrieval for jurors in Phase 7.
-2026-11-19 · Implemented pure rules engine functions in app.rules without DB or LLM dependencies · Strictly aligns with Rules.md architecture constraints.
+2026-11-19 · Implemented hybrid statutory voting aggregation Score = 0.5*J + 0.5*P with hung band and truth comparison · Aligns with Architecture.md section 10 and pure function design.
+2026-11-19 · Enforced strict juror isolation ensuring only admitted, non-struck turns and admitted exhibits are accessible to jurors · Guarantees legal integrity of simulated jury deliberations.
+2026-11-19 · Assigned dynamic devil's advocate role in juror deliberation rounds · Tests group consensus and ensures robust deliberation dynamics.
+2026-11-19 · Created three distinct verdict judge agents (textualist, precedent, fairness) with statutory retrieval · Reflects diverse Indian judicial philosophies in bench opinions.
 
 ## Next Step
 

@@ -13,11 +13,20 @@ from app.context.judge import (
     build_judge_context,
     build_judge_opening_prompt,
 )
+from app.context.juror import (
+    build_juror_context,
+    build_juror_deliberation_prompt,
+    build_juror_vote_prompt,
+)
 from app.context.prosecutor import (
     build_prosecutor_closing_prompt,
     build_prosecutor_context,
     build_prosecutor_examination_prompt,
     build_prosecutor_objection_prompt,
+)
+from app.context.verdict_judge import (
+    build_verdict_judge_context,
+    build_verdict_judge_prompt,
 )
 from app.context.witness import build_witness_answer_prompt, build_witness_context
 
@@ -39,4 +48,9 @@ __all__ = [
     "build_witness_answer_prompt",
     "build_defendant_context",
     "build_defendant_answer_prompt",
+    "build_juror_context",
+    "build_juror_vote_prompt",
+    "build_juror_deliberation_prompt",
+    "build_verdict_judge_context",
+    "build_verdict_judge_prompt",
 ]

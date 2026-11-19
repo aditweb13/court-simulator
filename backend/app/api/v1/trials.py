@@ -16,11 +16,18 @@ from app.api.deps import get_optional_current_user
 from app.config import settings
 from app.core.errors import AppException, ErrorCode, get_request_id
 from app.db.models.case import Case
-from app.db.models.trial import Agent, Trial, Turn
+from app.db.models.trial import Agent, Trial, Turn, Verdict, Vote
 from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.envelope import Meta, SuccessResponse
-from app.schemas.trial import AgentSummary, TrialCreate, TrialDetail
+from app.schemas.trial import (
+    AgentSummary,
+    TrialCreate,
+    TrialDetail,
+    VerdictDetail,
+    VerdictVoteDetail,
+)
+from app.voting import calculate_bns_sentence_range
 
 router = APIRouter(prefix="/trials", tags=["trials"])
 
@@ -318,3 +325,81 @@ async def get_trial(
     )
 
     return SuccessResponse(data=detail, meta=Meta(request_id=req_id))
+
+
+@router.get("/{trial_id}/verdict", response_model=SuccessResponse[VerdictDetail])
+async def get_trial_verdict(
+    trial_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[VerdictDetail]:
+    """Retrieve the aggregated verdict, judicial breakdown, and revealed ground truth."""
+    req_id = get_request_id(request)
+
+    verdict_row = await db.get(Verdict, trial_id)
+    if verdict_row is None:
+        raise AppException(
+            code=ErrorCode.NOT_FOUND,
+            message=f"Verdict for trial '{trial_id}' has not been resolved yet",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    stmt = select(Trial).options(selectinload(Trial.case)).where(Trial.id == trial_id)
+    trial_row = (await db.execute(stmt)).scalar_one_or_none()
+    case_row = trial_row.case if trial_row else None
+
+    # Load all votes for this trial
+    vote_stmt = (
+        select(Vote)
+        .options(selectinload(Vote.agent))
+        .where(Vote.trial_id == trial_id)
+        .order_by(Vote.id.asc())
+    )
+    votes_res = await db.execute(vote_stmt)
+    votes = list(votes_res.scalars().all())
+
+    judge_votes: List[VerdictVoteDetail] = []
+    juror_final_votes: List[VerdictVoteDetail] = []
+    juror_pre_votes: List[VerdictVoteDetail] = []
+
+    for v in votes:
+        vote_detail = VerdictVoteDetail(
+            agent_id=v.agent_id,
+            role=v.agent.role if v.agent else "unknown",
+            kind=v.kind,
+            guilty=v.guilty,
+            guilt_probability=(
+                float(v.guilt_probability) if v.guilt_probability is not None else None
+            ),
+            confidence=float(v.confidence) if v.confidence is not None else None,
+            reasoning=v.reasoning,
+            cited_turn_ids=v.cited_turn_ids or [],
+        )
+        if v.kind == "judge":
+            judge_votes.append(vote_detail)
+        elif v.kind == "juror_final":
+            juror_final_votes.append(vote_detail)
+        elif v.kind == "juror_pre":
+            juror_pre_votes.append(vote_detail)
+
+    sentence = None
+    if verdict_row.outcome == "guilty" and case_row:
+        sentence = calculate_bns_sentence_range(case_row.charge, case_row.title)
+
+    verdict_detail = VerdictDetail(
+        trial_id=verdict_row.trial_id,
+        outcome=verdict_row.outcome,
+        score=float(verdict_row.score),
+        j=float(verdict_row.j),
+        p=float(verdict_row.p),
+        threshold=float(verdict_row.threshold),
+        disagreement=float(verdict_row.disagreement),
+        matches_truth=verdict_row.matches_truth,
+        truth=case_row.truth if case_row else None,
+        sentence=sentence,
+        judge_votes=judge_votes,
+        juror_final_votes=juror_final_votes,
+        juror_pre_votes=juror_pre_votes,
+    )
+
+    return SuccessResponse(data=verdict_detail, meta=Meta(request_id=req_id))

@@ -11,6 +11,7 @@ Phase 7 adds: deliberation_node, verdict_node.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -32,15 +33,24 @@ from app.context.judge import (
     build_judge_context,
     build_judge_opening_prompt,
 )
+from app.context.juror import (
+    build_juror_context,
+    build_juror_deliberation_prompt,
+    build_juror_vote_prompt,
+)
 from app.context.prosecutor import (
     build_prosecutor_closing_prompt,
     build_prosecutor_context,
     build_prosecutor_examination_prompt,
     build_prosecutor_objection_prompt,
 )
+from app.context.verdict_judge import (
+    build_verdict_judge_context,
+    build_verdict_judge_prompt,
+)
 from app.context.witness import build_witness_answer_prompt, build_witness_context
 from app.db.models.case import Case
-from app.db.models.trial import Agent, Trial, Turn, TurnEmbedding
+from app.db.models.trial import Agent, Trial, Turn, TurnEmbedding, Verdict, Vote
 from app.llm.router import chat
 from app.orchestrator.schemas import (
     ClerkAnnouncementOutput,
@@ -48,6 +58,9 @@ from app.orchestrator.schemas import (
     ExaminationQuestionOutput,
     JudgeClosingOutput,
     JudgeOpeningOutput,
+    JudgeVerdictOutput,
+    JurorDeliberationOutput,
+    JurorVoteOutput,
     ObjectionOutput,
     WitnessAnswerOutput,
 )
@@ -59,8 +72,9 @@ from app.rules import (
     is_leading_question_permitted,
     is_valid_objection_ground,
 )
+from app.voting import aggregate_verdict, calculate_bns_sentence_range
 from app.ws.connection import manager as ws_manager
-from app.ws.schemas import LineEvent, RulingEvent, StateEvent
+from app.ws.schemas import LineEvent, RulingEvent, StateEvent, VerdictEvent
 
 logger = logging.getLogger("app.orchestrator")
 
@@ -1316,9 +1330,9 @@ async def closings_node(
 
     await db.commit()
 
-    # Transition to FINISHED (DELIBERATION/VERDICT in Phase 7)
+    # Transition to DELIBERATION in Phase 7
     previous = state["current_phase"]
-    new_phase = TrialPhase.FINISHED.value
+    new_phase = TrialPhase.DELIBERATION.value
     await _update_trial_state(db, trial_id, new_phase)
     await _send_state(trial_id, new_phase, previous)
     await db.commit()
@@ -1334,6 +1348,449 @@ async def closings_node(
         **state,
         "current_phase": new_phase,
         "previous_phase": previous,
+        "turn_seq": seq,
+        "turns": turns_generated,
+        "active_speaker": "judge",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Node: DELIBERATION
+# ---------------------------------------------------------------------------
+
+
+async def deliberation_node(
+    state: CourtroomState,
+    db: AsyncSession,
+) -> CourtroomState:
+    """Execute jury deliberation: initial pre-votes, deliberation rounds, and final votes.
+
+    Flow:
+    1. Pre-deliberation private votes for each juror (parallel) -> stored in `votes`
+    2. Deliberation rounds with an active devil's advocate -> turns persisted and dispatched
+    3. Post-deliberation private final votes for each juror (parallel) -> stored in `votes`
+    4. Transition to VERDICT phase
+    """
+    trial_id = state["trial_id"]
+    case_id = state["case_id"]
+    seq = state["turn_seq"]
+    logger.info("deliberation_node: starting trial %s at seq %d", trial_id, seq)
+
+    # 1. Update DB & broadcast state transition
+    previous = state["current_phase"]
+    curr_phase = TrialPhase.DELIBERATION.value
+    await _update_trial_state(db, trial_id, curr_phase)
+    await _send_state(trial_id, curr_phase, previous)
+    await db.commit()
+
+    # 2. Load trial configuration and juror agents
+    trial = await db.get(Trial, trial_id)
+    config = trial.config if trial else {}
+    rounds = int(config.get("rounds", 2 if settings.dev_mode else 3))
+
+    stmt = (
+        select(Agent)
+        .where(Agent.trial_id == trial_id, Agent.role == "juror")
+        .order_by(Agent.id.asc())
+    )
+    res = await db.execute(stmt)
+    jurors = list(res.scalars().all())
+
+    # Map turn sequence numbers to turn IDs for citations
+    turn_stmt = select(Turn.id, Turn.seq).where(Turn.trial_id == trial_id)
+    turn_res = await db.execute(turn_stmt)
+    seq_to_id = {row[1]: row[0] for row in turn_res.all()}
+
+    turns_generated: List[Dict[str, Any]] = list(state.get("turns", []))
+
+    if not jurors:
+        logger.warning("deliberation_node: no jurors found for trial %s, skipping", trial_id)
+        return {
+            **state,
+            "current_phase": TrialPhase.VERDICT.value,
+            "previous_phase": curr_phase,
+            "turn_seq": seq,
+        }
+
+    # -----------------------------------------------------------------------
+    # Step A: Initial Pre-Deliberation Votes (Parallel)
+    # -----------------------------------------------------------------------
+    logger.info("deliberation_node: collecting pre-deliberation votes for %d jurors", len(jurors))
+
+    async def _cast_pre_vote(ja: Agent, j_no: int) -> tuple[Vote, JurorVoteOutput]:
+        ctx = await build_juror_context(db, trial_id, case_id, juror_no=j_no)
+        messages = build_juror_vote_prompt(ctx, stage="pre")
+        vote_out: JurorVoteOutput = await chat(
+            tier="small",
+            messages=messages,
+            response_model=JurorVoteOutput,
+            trial_id=trial_id,
+            agent_role="juror",
+        )
+        cited_ids = [seq_to_id[s] for s in vote_out.cited_turn_seqs if s in seq_to_id]
+        vote_row = Vote(
+            trial_id=trial_id,
+            agent_id=ja.id,
+            kind="juror_pre",
+            guilty=vote_out.guilty,
+            guilt_probability=round(vote_out.guilt_probability, 3),
+            confidence=round(vote_out.confidence, 3),
+            reasoning=vote_out.reasoning,
+            cited_turn_ids=cited_ids,
+        )
+        return vote_row, vote_out
+
+    pre_tasks = [
+        _cast_pre_vote(ja, ja.persona.get("juror_no", i + 1)) for i, ja in enumerate(jurors)
+    ]
+    pre_results = await asyncio.gather(*pre_tasks)
+    pre_vote_rows = [pr[0] for pr in pre_results]
+    pre_vote_outputs = [pr[1] for pr in pre_results]
+
+    db.add_all(pre_vote_rows)
+    await db.flush()
+
+    # -----------------------------------------------------------------------
+    # Step B: Deliberation Rounds (with Devil's Advocate)
+    # -----------------------------------------------------------------------
+    deliberation_history: List[Dict[str, Any]] = []
+
+    # Identify majority leaning from pre-votes to pick Devil's Advocate
+    guilty_count = sum(1 for vo in pre_vote_outputs if vo.guilty)
+    majority_is_guilty = guilty_count >= (len(jurors) / 2)
+
+    # Pick juror index who opposes the majority or has lowest probability/confidence
+    devil_advocate_idx = 0
+    for idx, vo in enumerate(pre_vote_outputs):
+        if majority_is_guilty and not vo.guilty:
+            devil_advocate_idx = idx
+            break
+        elif not majority_is_guilty and vo.guilty:
+            devil_advocate_idx = idx
+            break
+
+    logger.info(
+        "deliberation_node: starting %d deliberation rounds; Juror #%d assigned Devil's Advocate",
+        rounds,
+        devil_advocate_idx + 1,
+    )
+
+    # In dev_mode/test, each round features 2 speaking jurors; in full mode up to 3
+    jurors_per_round = min(3 if not settings.dev_mode else 2, len(jurors))
+
+    for r_idx in range(rounds):
+        # Select jurors for this round (always include devil's advocate in round 1)
+        active_jurors = (
+            [jurors[devil_advocate_idx], jurors[(devil_advocate_idx + 1) % len(jurors)]]
+            if r_idx == 0
+            else jurors[r_idx % len(jurors) : r_idx % len(jurors) + jurors_per_round]
+        )
+
+        for ja in active_jurors:
+            j_no = ja.persona.get("juror_no", 1)
+            is_da = ja == jurors[devil_advocate_idx]
+
+            ctx = await build_juror_context(db, trial_id, case_id, juror_no=j_no)
+            delib_messages = build_juror_deliberation_prompt(
+                ctx=ctx,
+                previous_deliberation_turns=deliberation_history,
+                is_devil_advocate=is_da,
+            )
+
+            delib_out: JurorDeliberationOutput = await chat(
+                tier="small",
+                messages=delib_messages,
+                response_model=JurorDeliberationOutput,
+                trial_id=trial_id,
+                agent_role="juror",
+            )
+
+            statement_text = f"Juror #{j_no}: {delib_out.statement}"
+            await _persist_turn(
+                db=db,
+                trial_id=trial_id,
+                seq=seq,
+                agent_id=ja.id,
+                speaker_role="juror",
+                text=statement_text,
+                action="talk",
+                emotion="serious",
+                camera="jury",
+            )
+            ack_ok = await _send_and_wait_ack(
+                trial_id=trial_id,
+                seq=seq,
+                speaker="juror",
+                text=statement_text,
+                action="talk",
+                emotion="serious",
+                camera="jury",
+            )
+            turns_generated.append({"seq": seq, "speaker": "juror", "text": statement_text})
+            deliberation_history.append({"juror_no": j_no, "statement": delib_out.statement})
+            seq += 1
+
+            if not ack_ok:
+                return await _pause_trial(
+                    db,
+                    {**state, "turns": turns_generated, "turn_seq": seq},
+                    trial_id,
+                )
+
+    # -----------------------------------------------------------------------
+    # Step C: Final Post-Deliberation Votes (Parallel)
+    # -----------------------------------------------------------------------
+    logger.info("deliberation_node: collecting final post-deliberation votes")
+
+    async def _cast_final_vote(ja: Agent, j_no: int) -> Vote:
+        ctx = await build_juror_context(db, trial_id, case_id, juror_no=j_no)
+        messages = build_juror_vote_prompt(ctx, stage="final")
+        vote_out: JurorVoteOutput = await chat(
+            tier="small",
+            messages=messages,
+            response_model=JurorVoteOutput,
+            trial_id=trial_id,
+            agent_role="juror",
+        )
+        cited_ids = [seq_to_id[s] for s in vote_out.cited_turn_seqs if s in seq_to_id]
+        return Vote(
+            trial_id=trial_id,
+            agent_id=ja.id,
+            kind="juror_final",
+            guilty=vote_out.guilty,
+            guilt_probability=round(vote_out.guilt_probability, 3),
+            confidence=round(vote_out.confidence, 3),
+            reasoning=vote_out.reasoning,
+            cited_turn_ids=cited_ids,
+        )
+
+    final_tasks = [
+        _cast_final_vote(ja, ja.persona.get("juror_no", i + 1)) for i, ja in enumerate(jurors)
+    ]
+    final_vote_rows = await asyncio.gather(*final_tasks)
+    db.add_all(final_vote_rows)
+    await db.commit()
+
+    # Transition to VERDICT
+    next_phase = TrialPhase.VERDICT.value
+    await _update_trial_state(db, trial_id, next_phase)
+    await _send_state(trial_id, next_phase, curr_phase)
+    await db.commit()
+
+    return {
+        **state,
+        "current_phase": next_phase,
+        "previous_phase": curr_phase,
+        "turn_seq": seq,
+        "turns": turns_generated,
+        "active_speaker": "juror",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Node: VERDICT
+# ---------------------------------------------------------------------------
+
+
+async def verdict_node(
+    state: CourtroomState,
+    db: AsyncSession,
+) -> CourtroomState:
+    """Execute final verdict: three judicial opinions, score aggregation, and pronouncement.
+
+    Flow:
+    1. Three verdict judges (textualist, precedent, fairness) evaluate case -> stored in `votes`
+    2. Aggregate 0.5 * J + 0.5 * P, compute disagreement and outcome
+    3. Compare with hidden ground truth
+    4. Persist Verdict record
+    5. Broadcast VerdictEvent
+    6. Presiding judge pronounces formal verdict and sentence
+    7. Transition to FINISHED
+    """
+    trial_id = state["trial_id"]
+    case_id = state["case_id"]
+    seq = state["turn_seq"]
+    logger.info("verdict_node: resolving verdict for trial %s at seq %d", trial_id, seq)
+
+    # 1. Update DB & broadcast state transition
+    previous = state["current_phase"]
+    curr_phase = TrialPhase.VERDICT.value
+    await _update_trial_state(db, trial_id, curr_phase)
+    await _send_state(trial_id, curr_phase, previous)
+    await db.commit()
+
+    # Load trial config, case, and presiding judge
+    trial = await db.get(Trial, trial_id)
+    config = trial.config if trial else {}
+    threshold = float(config.get("threshold", 0.75))
+    hung_band = float(config.get("hung_band", 0.05))
+
+    case_row = await db.get(Case, case_id)
+    judge_agent = await _get_agent_by_role(db, trial_id, "judge")
+
+    # 2. Three Verdict Judges evaluate case in parallel
+    stmt = select(Agent).where(Agent.trial_id == trial_id, Agent.role == "verdict_judge")
+    res = await db.execute(stmt)
+    v_judge_agents = list(res.scalars().all())
+
+    philosophies = ["textualist", "precedent", "fairness"]
+
+    async def _evaluate_judge(ja: Agent, phil: str) -> Vote:
+        ctx = await build_verdict_judge_context(db, trial_id, case_id, philosophy=phil)
+        messages = build_verdict_judge_prompt(ctx)
+        v_out: JudgeVerdictOutput = await chat(
+            tier="strong",
+            messages=messages,
+            response_model=JudgeVerdictOutput,
+            trial_id=trial_id,
+            agent_role="verdict_judge",
+        )
+        return Vote(
+            trial_id=trial_id,
+            agent_id=ja.id,
+            kind="judge",
+            guilty=v_out.guilty,
+            guilt_probability=round(v_out.guilt_probability, 3),
+            confidence=round(v_out.confidence, 3),
+            reasoning=v_out.reasoning,
+        )
+
+    judge_tasks = [
+        _evaluate_judge(ja, ja.persona.get("philosophy", philosophies[idx % 3]))
+        for idx, ja in enumerate(v_judge_agents)
+    ]
+    judge_vote_rows: List[Vote] = []
+    if judge_tasks:
+        judge_vote_rows = await asyncio.gather(*judge_tasks)
+        db.add_all(judge_vote_rows)
+        await db.flush()
+
+    # 3. Load all juror final votes and judge votes for aggregation
+    jf_stmt = select(Vote).where(Vote.trial_id == trial_id, Vote.kind == "juror_final")
+    jf_res = await db.execute(jf_stmt)
+    juror_final_votes = list(jf_res.scalars().all())
+
+    jv_stmt = select(Vote).where(Vote.trial_id == trial_id, Vote.kind == "judge")
+    jv_res = await db.execute(jv_stmt)
+    all_judge_votes = list(jv_res.scalars().all())
+
+    ground_truth_guilty: Optional[bool] = None
+    if case_row and isinstance(case_row.truth, dict):
+        if "guilty" in case_row.truth:
+            ground_truth_guilty = bool(case_row.truth["guilty"])
+        elif "culprit" in case_row.truth:
+            culprit = str(case_row.truth.get("culprit", "")).strip().lower()
+            title_lower = (case_row.title or "").lower()
+            ground_truth_guilty = bool(
+                culprit != "" and (culprit in title_lower or "accused" in culprit)
+            )
+
+    agg = aggregate_verdict(
+        juror_final_votes=juror_final_votes,
+        judge_votes=all_judge_votes,
+        threshold=threshold,
+        hung_band=hung_band,
+        ground_truth_guilty=ground_truth_guilty,
+    )
+
+    sentence_info = calculate_bns_sentence_range(
+        bns_section=case_row.charge if case_row else "",
+        charge=case_row.title if case_row else "",
+    )
+
+    # 4. Persist Verdict Record
+    verdict_record = Verdict(
+        trial_id=trial_id,
+        j=agg.j,
+        p=agg.p,
+        score=agg.score,
+        threshold=agg.threshold,
+        outcome=agg.outcome,
+        disagreement=agg.disagreement,
+        matches_truth=agg.matches_truth,
+    )
+    db.add(verdict_record)
+    await db.flush()
+
+    # 5. Broadcast VerdictEvent
+    verdict_commentary = (
+        f"Jury Guilt Share: {agg.j:.1%}, Judicial Probability: {agg.p:.1%}. "
+        f"Combined Score: {agg.score:.3f} (Threshold: {agg.threshold:.2f}). "
+        f"Verdict: {agg.outcome.upper().replace('_', ' ')}."
+    )
+    await ws_manager.send_event(
+        trial_id,
+        VerdictEvent(
+            outcome=agg.outcome,  # type: ignore[arg-type]
+            score=agg.score,
+            threshold=agg.threshold,
+            disagreement=agg.disagreement,
+            matches_truth=agg.matches_truth,
+            reasoning=verdict_commentary,
+        ),
+    )
+
+    # 6. Presiding Judge delivers oral pronouncement and sentence from bench
+    turns_generated: List[Dict[str, Any]] = list(state.get("turns", []))
+
+    if agg.outcome == "guilty":
+        rec_sent = sentence_info["recommended"]
+        pronouncement = (
+            f"The Court finds the accused GUILTY as charged. "
+            f"Under {sentence_info['section']}, sentence pronounced: {rec_sent}."
+        )
+    elif agg.outcome == "not_guilty":
+        pronouncement = (
+            "The Court finds the prosecution has failed to establish guilt beyond doubt. "
+            "The accused is hereby ACQUITTED and set at liberty."
+        )
+    else:
+        pronouncement = (
+            "The jury and bench have failed to reach consensus within statutory thresholds. "
+            "The Court hereby declares a MISTRIAL."
+        )
+
+    await _persist_turn(
+        db=db,
+        trial_id=trial_id,
+        seq=seq,
+        agent_id=judge_agent.id if judge_agent else None,
+        speaker_role="judge",
+        text=pronouncement,
+        action="gavel",
+        emotion="neutral",
+        camera="judge",
+    )
+    ack_ok = await _send_and_wait_ack(
+        trial_id=trial_id,
+        seq=seq,
+        speaker="judge",
+        text=pronouncement,
+        action="gavel",
+        emotion="neutral",
+        camera="judge",
+    )
+    turns_generated.append({"seq": seq, "speaker": "judge", "text": pronouncement})
+    seq += 1
+
+    if not ack_ok:
+        return await _pause_trial(
+            db,
+            {**state, "turns": turns_generated, "turn_seq": seq},
+            trial_id,
+        )
+
+    # 7. Finalize trial state
+    if trial:
+        trial.state = TrialPhase.FINISHED.value
+    await _update_trial_state(db, trial_id, TrialPhase.FINISHED.value)
+    await _send_state(trial_id, TrialPhase.FINISHED.value, curr_phase)
+    await db.commit()
+
+    return {
+        **state,
+        "current_phase": TrialPhase.FINISHED.value,
+        "previous_phase": curr_phase,
         "turn_seq": seq,
         "turns": turns_generated,
         "active_speaker": "judge",

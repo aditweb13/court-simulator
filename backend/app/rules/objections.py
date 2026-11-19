@@ -26,9 +26,7 @@ GROUND_STATUTORY_CITATIONS: Final[Dict[str, str]] = {
         "Section 146 of the Bharatiya Sakshya Adhiniyam, 2023 "
         "(Leading questions prohibited in chief and re-examination)"
     ),
-    "relevance": (
-        "Sections 3 to 14 of the Bharatiya Sakshya Adhiniyam, 2023 (Relevancy of facts)"
-    ),
+    "relevance": ("Sections 3 to 14 of the Bharatiya Sakshya Adhiniyam, 2023 (Relevancy of facts)"),
     "badgering": (
         "Section 154 of the Bharatiya Sakshya Adhiniyam, 2023 "
         "(Questions intended to insult or annoy)"

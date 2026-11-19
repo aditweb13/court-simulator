@@ -3,6 +3,7 @@ import { cn } from "./lib/utils";
 import { CourtroomCanvas } from "./scene/CourtroomCanvas";
 import { TrialControls } from "./ui/TrialControls";
 import { Transcript } from "./ui/Transcript";
+import { VerdictScreen } from "./ui/VerdictScreen";
 import { useTrialStore } from "./store/trialStore";
 
 export default function App() {
@@ -128,6 +129,8 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      <VerdictScreen />
     </div>
   );
 }

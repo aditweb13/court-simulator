@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -119,3 +119,73 @@ class TurnOutput(BaseModel):
     action: Optional[str] = None
     emotion: Optional[str] = None
     camera: Optional[str] = "wide"
+
+
+class JurorVoteOutput(BaseModel):
+    """Structured output from a juror casting their private pre- or post-deliberation vote."""
+
+    guilty: bool = Field(
+        description="Juror's ultimate binary verdict decision: guilty or not guilty"
+    )
+    guilt_probability: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Assessed probability (0.0 to 1.0) that accused committed the charged offense",
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Self-rated certainty in this decision (0.0 to 1.0)",
+    )
+    reasoning: str = Field(
+        description="Step-by-step reasoning assessing witness credibility and burden of proof",
+    )
+    cited_turn_seqs: List[int] = Field(
+        default_factory=list,
+        description="List of admitted turn seq numbers supporting this evaluation",
+    )
+
+
+class JurorDeliberationOutput(BaseModel):
+    """Structured output when a juror contributes a speaking point during group deliberation."""
+
+    statement: str = Field(
+        description="Spoken statement under 60 words arguing evidence or perspective",
+    )
+    devil_advocate: bool = Field(
+        default=False,
+        description="Whether this statement actively challenges consensus as devil's advocate",
+    )
+    current_leaning: str = Field(
+        default="undecided",
+        description="Current juror leaning: guilty, not_guilty, or undecided",
+    )
+    key_point: Optional[str] = Field(
+        default=None,
+        description="Core evidentiary pivot, e.g. 'weapon recovery gap', 'alibi consistency'",
+    )
+
+
+class JudgeVerdictOutput(BaseModel):
+    """Structured output from a verdict judge evaluating the trial from judicial philosophy."""
+
+    guilty: bool = Field(
+        description="Judicial finding: guilty beyond reasonable doubt or not guilty",
+    )
+    guilt_probability: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Judicial probability of guilt (0.0 to 1.0)",
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+        description="Degree of judicial certainty (0.0 to 1.0)",
+    )
+    reasoning: str = Field(
+        description="Formal judicial analysis applying statutory standards and legal doctrines",
+    )
+    cited_sections: List[str] = Field(
+        default_factory=list,
+        description="Statutory sections cited, e.g. ['BNS 103(1)', 'BSA 63']",
+    )

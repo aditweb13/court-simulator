@@ -17,7 +17,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.trial import Trial
-from app.orchestrator.nodes import closings_node, examination_node, openings_node, setup_node
+from app.orchestrator.nodes import (
+    closings_node,
+    deliberation_node,
+    examination_node,
+    openings_node,
+    setup_node,
+    verdict_node,
+)
 from app.orchestrator.state import CourtroomState, TrialPhase
 
 logger = logging.getLogger("app.orchestrator")
@@ -72,6 +79,22 @@ async def _run_closings(
     return await closings_node(state, db)
 
 
+async def _run_deliberation(
+    state: CourtroomState,
+    config: Optional[RunnableConfig] = None,
+) -> CourtroomState:
+    db = _extract_db(config)
+    return await deliberation_node(state, db)
+
+
+async def _run_verdict(
+    state: CourtroomState,
+    config: Optional[RunnableConfig] = None,
+) -> CourtroomState:
+    db = _extract_db(config)
+    return await verdict_node(state, db)
+
+
 # ---------------------------------------------------------------------------
 # Conditional Routing
 # ---------------------------------------------------------------------------
@@ -99,10 +122,21 @@ def _route_after_examination(state: CourtroomState) -> str:
 
 
 def _route_after_closings(state: CourtroomState) -> str:
-    """Route from closings: halt or finish.
+    """Route from closings: halt on error/pause, otherwise proceed to deliberation."""
+    if state.get("error") or state.get("is_paused"):
+        return END
+    return "deliberation"
 
-    Phase 7 will route to 'deliberation'.
-    """
+
+def _route_after_deliberation(state: CourtroomState) -> str:
+    """Route from deliberation: halt on error/pause, otherwise proceed to verdict."""
+    if state.get("error") or state.get("is_paused"):
+        return END
+    return "verdict"
+
+
+def _route_after_verdict(state: CourtroomState) -> str:
+    """Route from verdict: trial execution complete."""
     return END
 
 
@@ -120,6 +154,8 @@ def build_courtroom_graph() -> CompiledStateGraph:
     builder.add_node("openings", _run_openings)
     builder.add_node("examination", _run_examination)
     builder.add_node("closings", _run_closings)
+    builder.add_node("deliberation", _run_deliberation)
+    builder.add_node("verdict", _run_verdict)
 
     # 2. Add edges & conditional routing
     builder.add_edge(START, "setup")
@@ -141,6 +177,16 @@ def build_courtroom_graph() -> CompiledStateGraph:
     builder.add_conditional_edges(
         "closings",
         _route_after_closings,
+        {"deliberation": "deliberation", END: END},
+    )
+    builder.add_conditional_edges(
+        "deliberation",
+        _route_after_deliberation,
+        {"verdict": "verdict", END: END},
+    )
+    builder.add_conditional_edges(
+        "verdict",
+        _route_after_verdict,
         {END: END},
     )
 

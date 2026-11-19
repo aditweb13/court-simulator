@@ -134,3 +134,71 @@ async def test_trials_root_alias():
         )
         assert response.status_code == 201
         assert response.json()["data"]["case_slug"] == "state-v-malhotra-2024"
+
+
+@pytest.mark.asyncio
+async def test_get_trial_verdict_endpoint():
+    """Verify GET /trials/{id}/verdict returns verdict, breakdown, and truth."""
+    from app.db.models.trial import Agent, Verdict, Vote
+    from app.db.session import async_session_maker
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        # Create trial
+        create_resp = await client.post(
+            "/api/v1/trials",
+            json={"case_id": "state-v-malhotra-2024", "mode": "watch"},
+        )
+        assert create_resp.status_code == 201
+        trial_id = create_resp.json()["data"]["id"]
+        trial_uuid = uuid.UUID(trial_id)
+
+        # 1. Before verdict resolved -> 404
+        unresolved_resp = await client.get(f"/api/v1/trials/{trial_id}/verdict")
+        assert unresolved_resp.status_code == 404
+        assert unresolved_resp.json()["error"]["code"] == "NOT_FOUND"
+
+        # 2. Seed a Verdict and Vote in database
+        async with async_session_maker() as db:
+            from sqlalchemy import select
+
+            agent_stmt = select(Agent).where(Agent.trial_id == trial_uuid)
+            agent = (await db.execute(agent_stmt)).scalars().first()
+            assert agent is not None
+
+            verdict = Verdict(
+                trial_id=trial_uuid,
+                j=0.857,
+                p=0.800,
+                score=0.829,
+                threshold=0.75,
+                outcome="guilty",
+                disagreement=0.057,
+                matches_truth=True,
+            )
+            vote = Vote(
+                trial_id=trial_uuid,
+                agent_id=agent.id,
+                kind="judge",
+                guilty=True,
+                guilt_probability=0.85,
+                confidence=0.90,
+                reasoning="Textual elements satisfied.",
+            )
+            db.add_all([verdict, vote])
+            await db.commit()
+
+        # 3. After verdict resolved -> 200 with VerdictDetail
+        verdict_resp = await client.get(f"/api/v1/trials/{trial_id}/verdict")
+        assert verdict_resp.status_code == 200
+        body = verdict_resp.json()
+        assert "data" in body
+        vdata = body["data"]
+
+        assert vdata["outcome"] == "guilty"
+        assert vdata["score"] == pytest.approx(0.829, abs=0.001)
+        assert vdata["matches_truth"] is True
+        assert vdata["truth"] is not None
+        assert vdata["truth"]["culprit"] == "Vikram Malhotra"
+        assert vdata["sentence"] is not None
+        assert "103(1)" in vdata["sentence"]["section"]
+        assert len(vdata["judge_votes"]) == 1

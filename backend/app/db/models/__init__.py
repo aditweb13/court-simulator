@@ -3,7 +3,7 @@
 from app.db.models.case import Case, Evidence, Witness
 from app.db.models.knowledge import KnowledgeChunk
 from app.db.models.llm_call import LLMCall
-from app.db.models.trial import Agent, Trial, Turn, TurnEmbedding
+from app.db.models.trial import Agent, Trial, Turn, TurnEmbedding, Verdict, Vote
 from app.db.models.user import User
 
 __all__ = [
@@ -17,4 +17,6 @@ __all__ = [
     "Agent",
     "Turn",
     "TurnEmbedding",
+    "Vote",
+    "Verdict",
 ]

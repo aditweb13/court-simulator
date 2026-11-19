@@ -59,15 +59,15 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P6] Mark struck turns on sustained objections
 - [x] [P6] Witness examination loop (direct, cross, redirect)
 - [x] [P6] Isolation test suite for witnesses, lawyers and the record
-- [ ] [P7] Juror personas and the step-by-step reasoning prompt
-- [ ] [P7] Juror retrieval limited to admitted, non-struck turns, plus its isolation test
-- [ ] [P7] Deliberation rounds with a devil's advocate, run in parallel
-- [ ] [P7] Private pre- and post-deliberation votes
-- [ ] [P7] Three verdict judge agents with different philosophies and starting providers
-- [ ] [P7] Aggregation module (0.5 × J + 0.5 × P, threshold, hung band, disagreement) with unit tests
-- [ ] [P7] `votes` and `verdicts` migrations and persistence
-- [ ] [P7] Truth comparison and the verdict event
-- [ ] [P7] Verdict screen with reasoning and citations
+- [x] [P7] Juror personas and the step-by-step reasoning prompt
+- [x] [P7] Juror retrieval limited to admitted, non-struck turns, plus its isolation test
+- [x] [P7] Deliberation rounds with a devil's advocate, run in parallel
+- [x] [P7] Private pre- and post-deliberation votes
+- [x] [P7] Three verdict judge agents with different philosophies and starting providers
+- [x] [P7] Aggregation module (0.5 × J + 0.5 × P, threshold, hung band, disagreement) with unit tests
+- [x] [P7] `votes` and `verdicts` migrations and persistence
+- [x] [P7] Truth comparison and the verdict event
+- [x] [P7] Verdict screen with reasoning and citations
 
 ## P2: secondary
 

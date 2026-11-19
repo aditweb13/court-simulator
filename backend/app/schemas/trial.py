@@ -96,3 +96,34 @@ class TrialDetail(BaseModel):
     finished_at: Optional[datetime.datetime] = None
     agents: List[AgentSummary] = Field(default_factory=list)
     turns_count: int = 0
+
+
+class VerdictVoteDetail(BaseModel):
+    """Details of an individual vote cast by a juror or verdict judge."""
+
+    agent_id: UUID
+    role: str
+    kind: str  # juror_pre | juror_final | judge
+    guilty: Optional[bool] = None
+    guilt_probability: Optional[float] = None
+    confidence: Optional[float] = None
+    reasoning: str
+    cited_turn_ids: List[UUID] = Field(default_factory=list)
+
+
+class VerdictDetail(BaseModel):
+    """Full trial verdict review including jury, judicial bench, and truth evaluation."""
+
+    trial_id: UUID
+    outcome: str  # guilty | not_guilty | hung
+    score: float
+    j: float
+    p: float
+    threshold: float
+    disagreement: float
+    matches_truth: Optional[bool] = None
+    truth: Optional[Dict[str, Any]] = None
+    sentence: Optional[Dict[str, Any]] = None
+    judge_votes: List[VerdictVoteDetail] = Field(default_factory=list)
+    juror_final_votes: List[VerdictVoteDetail] = Field(default_factory=list)
+    juror_pre_votes: List[VerdictVoteDetail] = Field(default_factory=list)

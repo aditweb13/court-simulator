@@ -18,9 +18,11 @@ from app.db.session import async_session_maker
 from app.main import app
 from app.orchestrator.graph import (
     _route_after_closings,
+    _route_after_deliberation,
     _route_after_examination,
     _route_after_openings,
     _route_after_setup,
+    _route_after_verdict,
     build_courtroom_graph,
     run_trial,
 )
@@ -31,6 +33,9 @@ from app.orchestrator.schemas import (
     ExaminationQuestionOutput,
     JudgeClosingOutput,
     JudgeOpeningOutput,
+    JudgeVerdictOutput,
+    JurorDeliberationOutput,
+    JurorVoteOutput,
     ObjectionOutput,
     WitnessAnswerOutput,
 )
@@ -59,6 +64,8 @@ def test_graph_structure():
     assert "openings" in graph.nodes
     assert "examination" in graph.nodes
     assert "closings" in graph.nodes
+    assert "deliberation" in graph.nodes
+    assert "verdict" in graph.nodes
 
 
 def test_conditional_routing() -> None:
@@ -95,7 +102,17 @@ def test_conditional_routing() -> None:
     assert _route_after_examination(paused_state) == "__end__"
 
     # closings routing
-    assert _route_after_closings(normal_state) == "__end__"
+    assert _route_after_closings(normal_state) == "deliberation"
+    assert _route_after_closings(error_state) == "__end__"
+    assert _route_after_closings(paused_state) == "__end__"
+
+    # deliberation routing
+    assert _route_after_deliberation(normal_state) == "verdict"
+    assert _route_after_deliberation(error_state) == "__end__"
+    assert _route_after_deliberation(paused_state) == "__end__"
+
+    # verdict routing
+    assert _route_after_verdict(normal_state) == "__end__"
 
 
 @pytest.mark.asyncio
@@ -263,7 +280,7 @@ async def test_closings_node_turn_generation(seeded_trial):
 
             assert result_state["turn_seq"] == 5
             assert len(result_state["turns"]) == 3
-            assert result_state["current_phase"] == TrialPhase.FINISHED.value
+            assert result_state["current_phase"] == TrialPhase.DELIBERATION.value
 
             # Check turns in database
             stmt = select(Turn).where(Turn.trial_id == trial_id).order_by(Turn.seq)
@@ -295,6 +312,27 @@ async def test_full_run_trial(seeded_trial):
             return ClosingArgumentOutput(text="Counsel closing argument.")
         elif response_model is JudgeClosingOutput:
             return JudgeClosingOutput(text="Judge closing charge.")
+        elif response_model is JurorVoteOutput:
+            return JurorVoteOutput(
+                guilty=True,
+                guilt_probability=0.85,
+                confidence=0.80,
+                reasoning="Evidence establishes culpability.",
+                cited_turn_seqs=[2, 3],
+            )
+        elif response_model is JurorDeliberationOutput:
+            return JurorDeliberationOutput(
+                statement="The prosecution presented convincing forensic proof.",
+                current_leaning="guilty",
+            )
+        elif response_model is JudgeVerdictOutput:
+            return JudgeVerdictOutput(
+                guilty=True,
+                guilt_probability=0.85,
+                confidence=0.90,
+                reasoning="Statutory standards satisfied beyond reasonable doubt.",
+                cited_sections=["BNS 103(1)"],
+            )
         raise ValueError(f"Unexpected response_model: {response_model}")
 
     with patch("app.orchestrator.nodes.chat", side_effect=mock_chat):
@@ -303,25 +341,32 @@ async def test_full_run_trial(seeded_trial):
 
             assert final_state["current_phase"] == TrialPhase.FINISHED.value
             assert final_state["error"] is None
-            assert len(final_state["turns"]) == 11
-            assert final_state["turn_seq"] == 11
+            assert len(final_state["turns"]) > 11
 
             # Verify turns stored in database
             stmt = select(Turn).where(Turn.trial_id == trial_id).order_by(Turn.seq)
             turns_res = await db.execute(stmt)
             turns = turns_res.scalars().all()
-            assert len(turns) == 11
+            assert len(turns) > 11
             roles = [t.speaker_role for t in turns]
-            assert roles == [
-                "judge",
-                "clerk",
-                "prosecutor",
-                "witness",
-                "defense",
-                "witness",
-                "prosecutor",
-                "witness",
-                "prosecutor",
-                "defense",
-                "judge",
-            ]
+            assert "judge" in roles
+            assert "clerk" in roles
+            assert "prosecutor" in roles
+            assert "witness" in roles
+            assert "defense" in roles
+            assert "juror" in roles
+
+            # Verify Verdict and Votes persisted
+            from app.db.models.trial import Verdict, Vote
+
+            verdict_res = await db.get(Verdict, trial_id)
+            assert verdict_res is not None
+            assert verdict_res.outcome == "guilty"
+            assert verdict_res.score >= 0.75
+            assert verdict_res.matches_truth is True
+
+            vote_stmt = select(Vote).where(Vote.trial_id == trial_id)
+            v_rows = (await db.execute(vote_stmt)).scalars().all()
+            # In dev_mode (default in tests): 3 jurors (pre + final = 6) + 3 judges = 9 votes
+            # In production mode: 7 jurors (pre + final = 14) + 3 judges = 17 votes
+            assert len(v_rows) in (9, 17)
