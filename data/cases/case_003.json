@@ -1,0 +1,139 @@
+{
+  "slug": "state-v-singh-2024",
+  "title": "State of Punjab v. Harpreet Singh",
+  "jurisdiction": "IN",
+  "charge": "Voluntarily causing grievous hurt by dangerous weapons under Section 117(2) of Bharatiya Nyaya Sanhita, 2023",
+  "difficulty": 3,
+  "source": "handwritten",
+  "truth": {
+    "culprit": "Harpreet Singh",
+    "motive": "Retaliation over agricultural water channel boundary dispute following panchayat demarcation",
+    "summary": "On the night of 24 October 2024, near tubewell number 4 in village Chhapa, Harpreet Singh ambushed Gurpal Singh with a heavy iron rod, inflicting compound skull fracture and rib fractures before fleeing on an unlit motorcycle.",
+    "timeline": [
+      {
+        "id": 0,
+        "time": "2024-10-24 21:00",
+        "description": "Gurpal Singh walked out to tubewell number 4 to inspect irrigation water flow into his wheat crop.",
+        "location": "Agricultural Fields, Village Chhapa, Ludhiana",
+        "actors": ["Gurpal Singh"]
+      },
+      {
+        "id": 1,
+        "time": "2024-10-24 21:30",
+        "description": "Harpreet Singh concealed himself behind a sugarcane thicket holding an iron rod with welded bolt head.",
+        "location": "Tubewell No. 4, Village Chhapa",
+        "actors": ["Harpreet Singh"]
+      },
+      {
+        "id": 2,
+        "time": "2024-10-24 21:40",
+        "description": "Harpreet Singh attacked Gurpal Singh from behind, striking his head and shoulders multiple times with the iron rod.",
+        "location": "Tubewell No. 4, Village Chhapa",
+        "actors": ["Harpreet Singh", "Gurpal Singh"]
+      },
+      {
+        "id": 3,
+        "time": "2024-10-24 21:50",
+        "description": "Harpreet Singh discarded the iron rod into a dry drainage canal and escaped on an unlit motorcycle.",
+        "location": "Drainage Canal Road",
+        "actors": ["Harpreet Singh"]
+      },
+      {
+        "id": 4,
+        "time": "2024-10-24 22:15",
+        "description": "Dairy farmer Balwinder Sandhu heard groans near the canal crossing, spotted Gurpal Singh bleeding, and alerted villagers.",
+        "location": "Tubewell No. 4, Village Chhapa",
+        "actors": ["Balwinder Sandhu", "Gurpal Singh"]
+      },
+      {
+        "id": 5,
+        "time": "2024-10-25 00:30",
+        "description": "Sub-Inspector Kuldeep Gill arrived at Civil Hospital Ludhiana, recorded initial police statement, and dispatched recovery team.",
+        "location": "Civil Hospital, Ludhiana",
+        "actors": ["Sub-Inspector Kuldeep Gill", "Balwinder Sandhu"]
+      },
+      {
+        "id": 6,
+        "time": "2024-10-25 09:00",
+        "description": "Dr. Amandeep Kaur performed emergency craniotomy on Gurpal Singh and documented depressed frontal bone fracture.",
+        "location": "Surgery OT, Civil Hospital, Ludhiana",
+        "actors": ["Dr. Amandeep Kaur"]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "exhibit_no": "Ex. P-1",
+      "type": "physical",
+      "description": "Heavy iron rod (length 3.2 feet) with welded bolt head recovered from drainage canal pursuant to disclosure statement under Section 23 BSA.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-2",
+      "type": "forensic",
+      "description": "Medico-Legal Report (MLR No. 402/2024) from Civil Hospital certifying grievous hurt with dangerous weapon endangering life.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-3",
+      "type": "documentary",
+      "description": "Certified revenue demarcation map issued by Halqa Patwari showing water channel boundary disputed between Harpreet and Gurpal.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-4",
+      "type": "testimonial",
+      "description": "Oral testimony of village chowkidar claiming Harpreet's cousin told him over tea that Harpreet planned the beating.",
+      "admissible": false,
+      "reason_inadmissible": "Inadmissible hearsay evidence under Section 55 and 57 of Bharatiya Sakshya Adhiniyam, 2023."
+    },
+    {
+      "exhibit_no": "Ex. D-1",
+      "type": "documentary",
+      "description": "Affidavit of community elder claiming Harpreet Singh was attending a religious bhog ceremony 15 km away at the time of the incident.",
+      "admissible": true
+    }
+  ],
+  "witnesses": [
+    {
+      "name": "Balwinder Sandhu",
+      "saw_event_ids": [4, 5],
+      "reliability": 0.88,
+      "hides": [
+        "I owed Harpreet Singh ₹25,000 for seed fertilizer and avoided identifying him by name in my first verbal statement."
+      ],
+      "persona": {
+        "occupation": "Dairy Farmer and Neighbour",
+        "age": 52,
+        "tone": "Blunt, rustic, cautious about village rivalries",
+        "background": "Lifelong resident of Village Chhapa whose cattle shed borders the irrigation canal."
+      }
+    },
+    {
+      "name": "Sub-Inspector Kuldeep Gill",
+      "saw_event_ids": [5],
+      "reliability": 0.86,
+      "hides": [
+        "The disclosure memo for weapon recovery was typed back at the police station rather than at the canal site."
+      ],
+      "persona": {
+        "occupation": "Sub-Inspector, Ludhiana Rural Police",
+        "age": 38,
+        "tone": "Direct, assertive, pragmatic",
+        "background": "Ten years in rural policing handling land and agrarian disputes."
+      }
+    },
+    {
+      "name": "Dr. Amandeep Kaur",
+      "saw_event_ids": [6],
+      "reliability": 0.96,
+      "hides": [],
+      "persona": {
+        "occupation": "Senior Surgeon, Civil Hospital, Ludhiana",
+        "age": 46,
+        "tone": "Objective, academic, unwavering on trauma assessment",
+        "background": "Trauma specialist with 18 years surgical experience."
+      }
+    }
+  ]
+}

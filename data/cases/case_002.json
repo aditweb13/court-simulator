@@ -1,0 +1,134 @@
+{
+  "slug": "state-v-kapoor-2024",
+  "title": "State of NCT of Delhi v. Nikhil Kapoor",
+  "jurisdiction": "IN",
+  "charge": "Cheating under Section 318(4) of Bharatiya Nyaya Sanhita, 2023",
+  "difficulty": 2,
+  "source": "handwritten",
+  "truth": {
+    "culprit": "Nikhil Kapoor",
+    "motive": "Siphoning ₹3.5 Crore from client escrow accounts to cover speculative cryptocurrency losses",
+    "summary": "On 18 September 2024, Nikhil Kapoor, Managing Director of Apex Realty Ltd, presented forged bank guarantees and escrow account releases to client Meera Deshmukh, inducing her to transfer ₹3.5 Crore for commercial property units that had already been mortgaged to a third-party non-banking financial company.",
+    "timeline": [
+      {
+        "id": 0,
+        "time": "2024-09-18 11:00",
+        "description": "Meera Deshmukh arrived at Apex Realty corporate office in Connaught Place, New Delhi for the final contract signing.",
+        "location": "Apex Realty Conference Room, Connaught Place, New Delhi",
+        "actors": ["Meera Deshmukh", "Nikhil Kapoor", "Aarti Saxena"]
+      },
+      {
+        "id": 1,
+        "time": "2024-09-18 11:30",
+        "description": "Nikhil Kapoor produced a stamped bank clearance certificate bearing forged signature of HDFC Bank branch manager.",
+        "location": "Apex Realty Conference Room",
+        "actors": ["Nikhil Kapoor", "Meera Deshmukh"]
+      },
+      {
+        "id": 2,
+        "time": "2024-09-18 12:15",
+        "description": "Meera Deshmukh initiated RTGS transfer of ₹3.5 Crore based on the forged clearance certificate.",
+        "location": "Apex Realty Conference Room",
+        "actors": ["Meera Deshmukh", "Aarti Saxena"]
+      },
+      {
+        "id": 3,
+        "time": "2024-09-18 12:45",
+        "description": "Nikhil Kapoor routed ₹3.5 Crore from company escrow to offshore crypto exchange account held under an alias.",
+        "location": "Private Executive Suite",
+        "actors": ["Nikhil Kapoor"]
+      },
+      {
+        "id": 4,
+        "time": "2024-09-19 10:00",
+        "description": "Meera Deshmukh discovered at the Sub-Registrar's office that the property was heavily encumbered under a prior mortgage.",
+        "location": "Sub-Registrar Office, Janakpuri, New Delhi",
+        "actors": ["Meera Deshmukh"]
+      },
+      {
+        "id": 5,
+        "time": "2024-09-20 14:00",
+        "description": "Economic Offences Wing (EOW) Inspector Alok Verma raided Apex Realty premises and seized office servers and loan registers.",
+        "location": "Apex Realty Office",
+        "actors": ["Inspector Alok Verma", "Aarti Saxena"]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "exhibit_no": "Ex. P-1",
+      "type": "documentary",
+      "description": "RTGS confirmation slip and bank statement showing debit of ₹3.5 Crore from Meera Deshmukh's account to Apex Realty escrow account.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-2",
+      "type": "documentary",
+      "description": "Original stamped HDFC Bank clearance certificate recovered from Meera Deshmukh, showing forged signature of the Branch Manager.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-3",
+      "type": "documentary",
+      "description": "Photocopy of an unsigned internal audit memo found in office trash bin, offered without original or explanation of custody.",
+      "admissible": false,
+      "reason_inadmissible": "Secondary documentary evidence tendered as an unauthenticated photocopy without satisfying requirements of Section 60 and 61 of Bharatiya Sakshya Adhiniyam, 2023."
+    },
+    {
+      "exhibit_no": "Ex. P-4",
+      "type": "forensic",
+      "description": "Forensic handwriting analysis report by Central Forensic Science Laboratory (CFSL) confirming the signature on the bank certificate does not match the authorized signatory.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. D-1",
+      "type": "documentary",
+      "description": "Minutes of Apex Realty board meeting dated 05 September 2024 purporting to authorize escrow restructuring.",
+      "admissible": true
+    }
+  ],
+  "witnesses": [
+    {
+      "name": "Meera Deshmukh",
+      "saw_event_ids": [0, 1, 2, 4],
+      "reliability": 0.9,
+      "hides": [
+        "I agreed to pay a 10% portion in unrecorded cash if the stamp duty could be lowered."
+      ],
+      "persona": {
+        "occupation": "Real Estate Investor",
+        "age": 44,
+        "tone": "Indignant, articulate, determined to recover funds",
+        "background": "Experienced commercial buyer who trusted Apex Realty due to high-profile marketing."
+      }
+    },
+    {
+      "name": "Aarti Saxena",
+      "saw_event_ids": [0, 2, 5],
+      "reliability": 0.75,
+      "hides": [
+        "I shredded three customer complaint files on Nikhil Kapoor's instruction right before the police raid."
+      ],
+      "persona": {
+        "occupation": "Executive Assistant to Nikhil Kapoor",
+        "age": 29,
+        "tone": "Apprehensive, guarded, seeking immunity",
+        "background": "Worked at Apex Realty for two years and handled daily executive paperwork."
+      }
+    },
+    {
+      "name": "Inspector Alok Verma",
+      "saw_event_ids": [5],
+      "reliability": 0.92,
+      "hides": [
+        "The hard drive containing server backup was temporarily kept in the police station locker without tamper seal for 48 hours."
+      ],
+      "persona": {
+        "occupation": "Inspector, Economic Offences Wing (EOW), Delhi Police",
+        "age": 47,
+        "tone": "Methodical, legalistic, procedural",
+        "background": "Specialized in corporate fraud and cyber financial investigations."
+      }
+    }
+  ]
+}
