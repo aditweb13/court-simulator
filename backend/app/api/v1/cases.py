@@ -127,3 +127,4 @@ async def get_case(
     )
 
     return SuccessResponse(data=detail, meta=Meta(request_id=req_id))
+
