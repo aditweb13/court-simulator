@@ -47,10 +47,10 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P5] Context filter and prompt for the judge and the clerk
 - [x] [P5] Send-then-wait-for-ack loop with timeout and a pause on dead client
 - [x] [P5] Port the prototype courtroom furniture and lighting to the React scene
-- [ ] [P5] Placeholder characters with sit, stand, talk and point states
-- [ ] [P5] Event player and queue on the client, with ack sending
-- [ ] [P5] Camera director with wide, close and jury shots, and captions overlay
-- [ ] [P5] Minimal frontend trial setup: case list, Start button, and trial screen
+- [x] [P5] Placeholder characters with sit, stand, talk and point states
+- [x] [P5] Event player and queue on the client, with ack sending
+- [x] [P5] Camera director with wide, close and jury shots, and captions overlay
+- [x] [P5] Minimal frontend trial setup: case list, Start button, and trial screen
 - [ ] [P6] Prosecutor and defense agents with adversarial prompts and private notes
 - [ ] [P6] Witness and defendant agents using their knowledge slices
 - [ ] [P6] Rules engine: turn order, objection quota, admissibility, with tests

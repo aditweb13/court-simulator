@@ -14,6 +14,7 @@ from sqlalchemy import select
 from app.core.security import decode_access_token
 from app.db.models.trial import Trial
 from app.db.session import async_session_maker
+from app.orchestrator.graph import run_trial
 from app.ws.connection import manager
 from app.ws.schemas import (
     AckEvent,
@@ -27,6 +28,19 @@ from app.ws.schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
+
+_active_trial_tasks: dict[UUID, asyncio.Task[None]] = {}
+
+
+async def _execute_trial_in_background(trial_id: UUID) -> None:
+    """Execute orchestrator run_trial pipeline in an isolated DB session."""
+    try:
+        async with async_session_maker() as db:
+            await run_trial(trial_id, db)
+    except Exception as e:
+        logger.exception("Error executing trial %s orchestrator: %s", trial_id, e)
+    finally:
+        _active_trial_tasks.pop(trial_id, None)
 
 
 @router.websocket("/ws/v1/trials/{trial_id}")
@@ -83,6 +97,12 @@ async def trial_websocket_endpoint(websocket: WebSocket, trial_id: UUID) -> None
 
     state_event = StateEvent(state=initial_state)
     await websocket.send_text(state_event.model_dump_json())
+
+    # Step 3.5: Auto-start orchestrator background execution for new trials
+    if trial_id not in _active_trial_tasks and initial_state == "SETUP":
+        task = asyncio.create_task(_execute_trial_in_background(trial_id))
+        _active_trial_tasks[trial_id] = task
+        logger.info("Launched orchestrator background task for trial %s", trial_id)
 
     # Step 4: Receive and dispatch client events
     try:

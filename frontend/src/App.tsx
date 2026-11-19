@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { cn } from "./lib/utils";
 import { CourtroomCanvas } from "./scene/CourtroomCanvas";
+import { TrialControls } from "./ui/TrialControls";
+import { Transcript } from "./ui/Transcript";
+import { useTrialStore } from "./store/trialStore";
 
 export default function App() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const trialState = useTrialStore((state) => state.trialState);
+  const status = useTrialStore((state) => state.status);
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -12,71 +17,116 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] transition-colors flex flex-col">
-      <header className="border-b border-[var(--border)] px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold text-[var(--primary)]">
-            Verdict
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)]">
-            3D Courtroom Simulator & Multi-Agent Justice System
-          </p>
+    <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] transition-colors flex flex-col font-sans">
+      {/* Accessible skip link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-[var(--primary)] focus:text-white focus:rounded focus:ring-2 focus:ring-[var(--focus)]"
+      >
+        Skip to courtroom proceedings
+      </a>
+
+      {/* Primary Application Header */}
+      <header className="border-b border-[var(--border)] px-6 py-4 flex items-center justify-between bg-[var(--surface)] shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-serif font-bold text-lg shadow-sm">
+            ⚖
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-serif font-bold tracking-tight text-[var(--primary)]">
+                Verdict
+              </h1>
+              <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-black/5 dark:bg-white/10 text-[var(--text-secondary)] border border-[var(--border)]">
+                BNS 2023 Edition
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-secondary)]">
+              Indian Courtroom Trial Simulator & Autonomous Multi-Agent Justice System
+            </p>
+          </div>
         </div>
-        <button
-          onClick={toggleTheme}
-          className={cn(
-            "px-4 py-2 text-sm font-medium rounded-[var(--radius-md)] border border-[var(--border)]",
-            "hover:border-[var(--primary)] transition-colors cursor-pointer",
-          )}
-        >
-          Theme: {theme === "light" ? "Light" : "Dark"}
-        </button>
+
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 text-xs text-[var(--text-secondary)] border-r border-[var(--border)] pr-4">
+            <span>State:</span>
+            <span className="font-semibold text-[var(--primary)] uppercase">
+              {status === "running" ? trialState : status}
+            </span>
+          </div>
+
+          <button
+            onClick={toggleTheme}
+            className={cn(
+              "px-3.5 py-1.5 text-xs font-medium rounded-[var(--radius-md)] border border-[var(--border)]",
+              "hover:border-[var(--primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer",
+            )}
+            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+          >
+            {theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}
+          </button>
+        </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col gap-6">
-        <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm flex flex-col">
-          <div className="border-b border-[var(--border)] px-6 py-3 flex items-center justify-between bg-black/5 dark:bg-white/5">
-            <span className="font-serif font-semibold text-sm tracking-wide text-[var(--primary)]">
-              Courtroom Chambers — Live View
-            </span>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-[var(--success)]/10 text-[var(--success)] font-medium">
-              3D Engine Ready
+      {/* Main Courtroom Simulation Interface */}
+      <main
+        id="main-content"
+        className="flex-1 max-w-[1360px] w-full mx-auto p-4 md:p-6 flex flex-col gap-6"
+      >
+        {/* 3D Viewport Chamber Shell */}
+        <section
+          className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm flex flex-col"
+          aria-label="3D Courtroom Simulation Chamber"
+        >
+          <div className="border-b border-[var(--border)] px-4 py-2.5 flex items-center justify-between bg-black/5 dark:bg-white/5 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-serif font-semibold text-sm tracking-wide text-[var(--primary)]">
+                Courtroom Chambers — Live View
+              </span>
+              <span className="text-[10px] text-[var(--text-secondary)]">
+                • Sessions Court of Greater Mumbai
+              </span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-[var(--success)]/10 text-[var(--success)] font-medium text-[11px] flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
+              Engine Online
             </span>
           </div>
 
-          <div className="h-[480px] w-full relative bg-neutral-950">
+          <div className="h-[480px] md:h-[540px] w-full relative bg-neutral-950">
             <CourtroomCanvas />
           </div>
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5">
-            <h3 className="font-serif font-semibold text-lg text-[var(--primary)] mb-1">
-              Case Docket
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)]">
-              State of Maharashtra v. K. Sharma (BNS Sec. 103)
-            </p>
+        {/* Proceedings Grid: Controls + Official Record */}
+        <section
+          className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[420px]"
+          aria-label="Courtroom Controls and Transcript"
+        >
+          {/* Left Column: Trial Controls & Case Docket */}
+          <div className="lg:col-span-4 flex flex-col gap-4">
+            <TrialControls />
+
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 text-xs space-y-2 text-[var(--text-secondary)]">
+              <h4 className="font-serif font-semibold text-sm text-[var(--primary)]">
+                Courtroom Protocol
+              </h4>
+              <p>
+                Proceedings follow the Bharatiya Nagarik Suraksha Sanhita (BNSS),
+                2023 and the Bharatiya Sakshya Adhiniyam (BSA), 2023.
+              </p>
+              <div className="pt-2 border-t border-[var(--border)] flex justify-between text-[11px]">
+                <span>Coram: Sole Judicial Magistrate</span>
+                <span>Jury Panel: 7 Citizen Assessors</span>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5">
-            <h3 className="font-serif font-semibold text-lg text-[var(--secondary)] mb-1">
-              Court Officials
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Hon. Judge Rao, Special Prosecutor, Public Defense Counsel
-            </p>
+          {/* Right Column: Official Transcript Stream */}
+          <div className="lg:col-span-8 flex flex-col">
+            <Transcript className="h-[460px]" />
           </div>
-
-          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-5">
-            <h3 className="font-serif font-semibold text-lg text-[var(--text-primary)] mb-1">
-              Jury Status
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)]">
-              7 Juror Agents Seated • Awaiting Examination
-            </p>
-          </div>
-        </div>
+        </section>
       </main>
     </div>
   );
