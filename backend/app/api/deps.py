@@ -53,3 +53,23 @@ async def get_current_user(
         )
 
     return user
+
+
+async def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    """Extract and validate Bearer token if present, returning None if unauthenticated."""
+    if credentials is None:
+        return None
+    try:
+        payload = decode_access_token(credentials.credentials)
+        user_id_str = payload.get("sub")
+        if not user_id_str:
+            return None
+        user_id = uuid.UUID(user_id_str)
+        stmt = select(User).where(User.id == user_id)
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+    except Exception:
+        return None

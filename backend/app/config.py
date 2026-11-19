@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     embedding_model: str = Field(default="BAAI/bge-m3", alias="EMBEDDING_MODEL")
     reranker_model: str = Field(default="BAAI/bge-reranker-v2-m3", alias="RERANKER_MODEL")
 
+    # Simulation & Quota Guards
+    dev_mode: bool = Field(default=True, alias="DEV_MODE")
+    max_trial_tokens: int = Field(default=300000, alias="MAX_TRIAL_TOKENS")
+    default_juror_count: int = Field(default=3, alias="DEFAULT_JUROR_COUNT")
+    default_deliberation_rounds: int = Field(default=1, alias="DEFAULT_DELIBERATION_ROUNDS")
+
     # Server & Logging
     cors_origins: Union[List[str], str] = Field(
         default=["http://localhost:5173", "http://127.0.0.1:5173"],
