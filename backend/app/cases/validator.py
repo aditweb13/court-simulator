@@ -34,6 +34,16 @@ def validate_case_integrity(case: CaseSchema) -> List[str]:
     if len(timeline_ids) != len(case.truth.timeline):
         errors.append("Timeline contains duplicate event IDs.")
 
+    # Culprit must appear in the timeline (in actors or description)
+    culprit_name = case.truth.culprit.strip().lower()
+    culprit_found = any(
+        any(culprit_name in actor.lower() for actor in event.actors)
+        or culprit_name in event.description.lower()
+        for event in case.truth.timeline
+    )
+    if not culprit_found:
+        errors.append(f"Culprit '{case.truth.culprit}' must appear in the timeline events.")
+
     # 2. Offence date rule: must be on or after 2024-07-01 so BNS applies
     bns_start_date = datetime.date(2024, 7, 1)
     for event in case.truth.timeline:

@@ -2,21 +2,31 @@
 
 from __future__ import annotations
 
+import datetime
 import uuid
-from typing import List
+from typing import Dict, List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.deps import get_current_user
+from app.casegen import CaseGenerateRequest, generate_case
+from app.cases.validator import CaseValidationError
+from app.config import settings
 from app.core.errors import AppException, ErrorCode, get_request_id
 from app.db.models.case import Case, Evidence, Witness
+from app.db.models.user import User
 from app.db.session import get_db
 from app.schemas.case import CaseDetail, CaseRead, EvidenceRead, WitnessRead
 from app.schemas.envelope import Meta, SuccessResponse
 
 router = APIRouter(prefix="/cases", tags=["cases"])
+
+# In-memory per-user daily generation tracker
+_user_generation_history: Dict[UUID, List[datetime.datetime]] = {}
 
 
 @router.get("", response_model=SuccessResponse[List[CaseRead]])
@@ -83,6 +93,91 @@ async def get_case(
             message=f"Case '{case_id}' not found",
             status_code=status.HTTP_404_NOT_FOUND,
         )
+
+    evidence_out = [
+        EvidenceRead(
+            id=ev.id,
+            exhibit_no=ev.exhibit_no,
+            type=ev.type,
+            description=ev.description,
+            admissible=ev.admissible,
+            reason_inadmissible=ev.reason_inadmissible,
+        )
+        for ev in case_row.evidence
+    ]
+
+    witnesses_out = [
+        WitnessRead(
+            id=w.id,
+            name=w.name,
+            persona=w.persona or {},
+        )
+        for w in case_row.witnesses
+    ]
+
+    detail = CaseDetail(
+        id=case_row.id,
+        slug=case_row.slug,
+        title=case_row.title,
+        jurisdiction=case_row.jurisdiction,
+        charge=case_row.charge,
+        difficulty=case_row.difficulty,
+        source=case_row.source,
+        evidence=evidence_out,
+        witnesses=witnesses_out,
+    )
+
+    return SuccessResponse(data=detail, meta=Meta(request_id=req_id))
+
+
+@router.post(
+    "/generate",
+    response_model=SuccessResponse[CaseDetail],
+    status_code=status.HTTP_201_CREATED,
+)
+async def generate_case_endpoint(
+    req: CaseGenerateRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[CaseDetail]:
+    """Generate a new case via staged LLM prompts with statutory grounding and caching."""
+    req_id = get_request_id(request)
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    # Enforce per-user daily quota
+    user_id = current_user.id
+    history = _user_generation_history.setdefault(user_id, [])
+    # Filter to calls within past 24 hours
+    cutoff = now - datetime.timedelta(hours=24)
+    active_history = [t for t in history if t > cutoff]
+    _user_generation_history[user_id] = active_history
+
+    if len(active_history) >= settings.casegen_daily_user_cap:
+        raise AppException(
+            code=ErrorCode.RATE_LIMITED,
+            message=(
+                f"Daily case generation limit ({settings.casegen_daily_user_cap}) reached. "
+                "Try again later."
+            ),
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    try:
+        case_row = await generate_case(db=db, request=req, user_id=user_id)
+        active_history.append(now)
+    except CaseValidationError as exc:
+        raise AppException(
+            code=ErrorCode.VALIDATION_ERROR,
+            message=str(exc),
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        ) from exc
+    except Exception as exc:
+        raise AppException(
+            code=ErrorCode.INTERNAL_ERROR,
+            message=f"Case generation failed: {exc}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        ) from exc
 
     evidence_out = [
         EvidenceRead(
