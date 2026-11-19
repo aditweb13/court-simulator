@@ -1,12 +1,21 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { Lighting } from "./Lighting";
+import { Walls } from "./Walls";
 import { Floor } from "./Floor";
+import { Bench } from "./Bench";
+import { WitnessStand } from "./WitnessStand";
+import { CounselTables } from "./CounselTable";
+import { JuryBox } from "./JuryBox";
+import { Gallery } from "./Gallery";
 
 interface CourtroomCanvasProps {
   className?: string;
 }
 
-export function CourtroomCanvas({ className = "w-full h-full min-h-[450px]" }: CourtroomCanvasProps) {
+export function CourtroomCanvas({
+  className = "w-full h-full min-h-[450px]",
+}: CourtroomCanvasProps) {
   return (
     <div
       className={className}
@@ -15,33 +24,32 @@ export function CourtroomCanvas({ className = "w-full h-full min-h-[450px]" }: C
     >
       <Canvas
         shadows
-        camera={{ position: [0, 6, 14], fov: 45 }}
+        camera={{ position: [0, 5.5, 9.5], fov: 46 }}
         gl={{ antialias: true }}
       >
-        {/* Courtroom Lighting */}
-        <ambientLight intensity={0.6} color="#FFE8D6" />
-        <directionalLight
-          position={[5, 12, 8]}
-          intensity={1.2}
-          color="#FFF2E0"
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-        />
-        <pointLight position={[0, 8, 0]} intensity={0.4} color="#FFD1A4" />
+        {/* Courtroom Lighting System */}
+        <Lighting />
 
-        {/* Scene Objects */}
+        {/* Architectural Room Shell */}
+        <Walls />
         <Floor />
+
+        {/* Courtroom Furniture */}
+        <Bench />
+        <WitnessStand />
+        <CounselTables />
+        <JuryBox />
+        <Gallery />
 
         {/* Camera interaction */}
         <OrbitControls
           makeDefault
           maxPolarAngle={Math.PI / 2 - 0.05}
-          minDistance={4}
-          maxDistance={25}
+          minDistance={3}
+          maxDistance={22}
+          target={[0, 1.5, -2]}
         />
       </Canvas>
     </div>
   );
 }
-
