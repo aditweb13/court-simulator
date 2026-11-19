@@ -19,6 +19,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.context.clerk import build_clerk_context, build_clerk_opening_prompt
+from app.context.judge import (
+    build_judge_closing_prompt,
+    build_judge_context,
+    build_judge_opening_prompt,
+)
 from app.db.models.case import Case
 from app.db.models.trial import Agent, Trial, Turn
 from app.llm.router import chat
@@ -200,9 +206,6 @@ async def openings_node(
     if case_row is None:
         return {**state, "error": f"Case {case_id} not found"}
 
-    charge_text = case_row.charge
-    case_title = case_row.title
-
     # Fetch judge and clerk agents
     judge_agent = await _get_agent_by_role(db, trial_id, "judge")
     clerk_agent = await _get_agent_by_role(db, trial_id, "clerk")
@@ -210,25 +213,11 @@ async def openings_node(
     turns_generated: List[Dict[str, Any]] = list(state.get("turns", []))
 
     # --- 1. Judge opening statement ---
-    judge_messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are a Presiding Sessions Judge in an Indian criminal court. "
-                "Deliver a formal opening statement for the trial. "
-                "Address the court, state the case title, and set procedural expectations. "
-                "Be authoritative but fair. Keep it under 150 words."
-            ),
-        },
-        {
-            "role": "user",
-            "content": (
-                f"Case: {case_title}\n"
-                f"Charge: {charge_text}\n\n"
-                "Deliver your opening statement to begin this trial."
-            ),
-        },
-    ]
+    judge_context = await build_judge_context(db, trial_id, case_id)
+    judge_messages = build_judge_opening_prompt(
+        judge_context,
+        judge_agent.persona if judge_agent else None,
+    )
 
     judge_output: JudgeOpeningOutput = await chat(
         tier="strong",
@@ -263,23 +252,11 @@ async def openings_node(
     seq += 1
 
     # --- 2. Clerk reads charges ---
-    clerk_messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are the Court Clerk in an Indian criminal court. "
-                "Formally read out the charges against the accused. "
-                "Be precise, formal, and reference the specific charge. "
-                "Keep it under 100 words."
-            ),
-        },
-        {
-            "role": "user",
-            "content": (
-                f"Case: {case_title}\nCharge: {charge_text}\n\nRead the charges to the court."
-            ),
-        },
-    ]
+    clerk_context = await build_clerk_context(db, trial_id, case_id)
+    clerk_messages = build_clerk_opening_prompt(
+        clerk_context,
+        clerk_agent.persona if clerk_agent else None,
+    )
 
     clerk_output: ClerkAnnouncementOutput = await chat(
         tier="mid",
@@ -476,24 +453,11 @@ async def closings_node(
     seq += 1
 
     # --- 3. Judge closing summary ---
-    judge_close_messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are the Presiding Sessions Judge. Summarize the proceedings "
-                "and instruct the jury on their deliberation duties. "
-                "Be impartial and procedural. Keep it under 120 words."
-            ),
-        },
-        {
-            "role": "user",
-            "content": (
-                f"Case: {case_title}\n"
-                f"Charge: {charge_text}\n\n"
-                "Deliver your closing summary and jury instructions."
-            ),
-        },
-    ]
+    judge_context = await build_judge_context(db, trial_id, case_id)
+    judge_close_messages = build_judge_closing_prompt(
+        judge_context,
+        judge_agent.persona if judge_agent else None,
+    )
 
     judge_close_output: JudgeClosingOutput = await chat(
         tier="strong",
