@@ -4,30 +4,40 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 3: Law knowledge base and retrieval (Batch A)
+Phase 4: Cases and ground truth (Batch B)
 
 ## Active Goal
 
-Implement Batch A (Phase 3 Law Knowledge Base): SOURCES.md, PDF/text parser with 512-token chunking, idempotent upsert ingestion, fake embedder/reranker wrappers, hybrid retrieval with RRF, citation checker, and 50-question eval set.
+Completed Phase 3 (Batch A) — all 9 tasks finished, verified, and Definition of Done achieved (92.0% top-5 retrieval accuracy on 50 questions, citation checker operational). Awaiting user "go" to proceed with Batch B (Phase 4: Cases and ground truth).
 
 ## Last Completed
 
-Created `data/law_corpus/SOURCES.md`, created directory `data/law_corpus/raw/`, enhanced `scripts/ingest_law.py` and `backend/app/rag/chunker.py` with SOURCES.md gate, PyMuPDF extraction, sub-section token splitting (>512 tokens), idempotent upsert on `(act, section_no, valid_from)`, added approved [P5] tasks to `TASKS.md`. All 68 backend unit tests passing.
+Batch A (Phase 3: Law Knowledge Base & Retrieval):
+- Ingestion script `backend/app/rag/chunker.py` and `scripts/ingest_law.py` with SOURCES.md gate, token budget splitting (<=512 tokens), gazette noise stripping, and idempotent upsert on `(act, section_no, valid_from)`.
+- Ingested BNS (456 chunks), BNSS (804 chunks), BSA (206 chunks), and Constitution (786 chunks with Arts 20-22 tagged for juror audience).
+- Concordance mapping `backend/app/rag/ipc_bns_map.py` loaded with 222 BNS->IPC and 238 IPC->BNS entries.
+- Deterministic FakeEmbedder & FakeReranker (zero model downloads in CI/unit tests) + production wrappers for BGE-M3 and BGE-Reranker-v2-m3.
+- Hybrid retrieval `retrieve()` with exact statutory/concordance lookup, weighted PostgreSQL FTS, vector similarity, Reciprocal Rank Fusion (k=60), and cross-encoder reranking with audience/date filtering.
+- Citation checker `backend/app/rag/citation.py` enforcing anti-hallucination validation against retrieved chunk IDs.
+- Benchmark eval script `scripts/eval_retrieval.py` validated with 46/50 (92.0%) top-5 accuracy (exceeds >=90% requirement).
+- Complete backend unit test suite: 116 tests passing, ruff and mypy 100% clean.
 
 ## Next Step
 
-Awaiting raw law files from user in `data/law_corpus/raw/`:
-- `bns.pdf` (or `.txt`)
-- `bnss.pdf` (or `.txt`)
-- `bsa.pdf` (or `.txt`)
-- `constitution.pdf` (or `.txt`)
-- `ipc_bns_map.json` (or `.txt` / `.csv`)
-Once placed, execute ingestion of BNS, BNSS, BSA, Constitution, and proceed with IPC-BNS mapping, embedder/reranker wrappers, hybrid retrieval, and 50-question eval set.
+Awaiting user approval ("go") to begin Batch B (Phase 4: Cases and ground truth):
+1. Write hand-made case 1 and loader script (`data/cases/`)
+2. Write hand-made cases 2 and 3
+3. Implement `GET /cases` and `GET /cases/{id}` endpoints
+4. Witness memory builder from `saw_event_ids` and its isolation test
+5. Case validation checks in code
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-19 · Implemented hybrid retrieval with exact lookup, weighted FTS, vector search, RRF (k=60) and citation-aware reranking achieving 92.0% top-5 benchmark accuracy · Meets Phase 3 Definition of Done.
+2026-11-19 · Added deterministic SHA-256 FakeEmbedder (1024-dim) and lexical FakeReranker for zero-download test execution · Complies with prompt constraint that CI/tests never download external models.
+2026-11-19 · Ingested BNS, BNSS, BSA, Constitution (2,252 chunks total) with IPC concordance mappings and Section 52(1)(q) public domain license tags · Completes legal corpus ingestion for Batch A.
 2026-11-18 · Implemented SOURCES.md gate, PyMuPDF extraction, sub-section token splitting (>512 tokens) and idempotent upsert on (act, section_no, valid_from) · Fulfills law ingestion requirements for Batch A.
 2026-11-18 · Authorized sequential execution of P1 core features across Phases 3 to 7 (Batches A through E) with checkpoints after each batch · Explicit user exception to Rules.md single-phase constraint.
 2026-11-18 · Implemented statutory act chunker and CLI ingestion script under Section 52(1)(q) Indian Copyright Act public domain provisions · Complies with Rules.md requirement to source official legislative text without memorization.

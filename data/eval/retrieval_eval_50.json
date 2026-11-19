@@ -1,0 +1,352 @@
+[
+  {
+    "id": 1,
+    "query": "What is the punishment for murder under Bharatiya Nyaya Sanhita?",
+    "expected_act": "BNS",
+    "expected_section": "103",
+    "role": "judge"
+  },
+  {
+    "id": 2,
+    "query": "Under which section is culpable homicide not amounting to murder punished in BNS?",
+    "expected_act": "BNS",
+    "expected_section": "105",
+    "role": "lawyer"
+  },
+  {
+    "id": 3,
+    "query": "Causing death by rash or negligent act not amounting to culpable homicide under BNS",
+    "expected_act": "BNS",
+    "expected_section": "106",
+    "role": "lawyer"
+  },
+  {
+    "id": 4,
+    "query": "Punishment for attempt to commit murder under BNS section 109",
+    "expected_act": "BNS",
+    "expected_section": "109",
+    "role": "judge"
+  },
+  {
+    "id": 5,
+    "query": "Definition and punishment of theft under BNS section 303",
+    "expected_act": "BNS",
+    "expected_section": "303",
+    "role": "lawyer"
+  },
+  {
+    "id": 6,
+    "query": "Cheating and dishonestly inducing delivery of property under BNS section 318",
+    "expected_act": "BNS",
+    "expected_section": "318",
+    "role": "lawyer"
+  },
+  {
+    "id": 7,
+    "query": "What constitutes the offence of criminal conspiracy under BNS?",
+    "expected_act": "BNS",
+    "expected_section": "61",
+    "role": "lawyer"
+  },
+  {
+    "id": 8,
+    "query": "Punishment for rape under Bharatiya Nyaya Sanhita section 64",
+    "expected_act": "BNS",
+    "expected_section": "64",
+    "role": "judge"
+  },
+  {
+    "id": 9,
+    "query": "Assault or use of criminal force to woman with intent to outrage her modesty BNS",
+    "expected_act": "BNS",
+    "expected_section": "74",
+    "role": "lawyer"
+  },
+  {
+    "id": 10,
+    "query": "Punishment for criminal intimidation under BNS section 351",
+    "expected_act": "BNS",
+    "expected_section": "351",
+    "role": "lawyer"
+  },
+  {
+    "id": 11,
+    "query": "Definition and punishment for defamation under Bharatiya Nyaya Sanhita",
+    "expected_act": "BNS",
+    "expected_section": "356",
+    "role": "judge"
+  },
+  {
+    "id": 12,
+    "query": "Robbery and punishment for committing robbery under BNS",
+    "expected_act": "BNS",
+    "expected_section": "309",
+    "role": "lawyer"
+  },
+  {
+    "id": 13,
+    "query": "What is the punishment for dacoity under Bharatiya Nyaya Sanhita?",
+    "expected_act": "BNS",
+    "expected_section": "310",
+    "role": "judge"
+  },
+  {
+    "id": 14,
+    "query": "Voluntarily causing hurt and punishment under BNS",
+    "expected_act": "BNS",
+    "expected_section": "115",
+    "role": "lawyer"
+  },
+  {
+    "id": 15,
+    "query": "Voluntarily causing grievous hurt under BNS section 117",
+    "expected_act": "BNS",
+    "expected_section": "117",
+    "role": "lawyer"
+  },
+  {
+    "id": 16,
+    "query": "Act done by a person bound or by mistake of fact believing himself bound by law BNS",
+    "expected_act": "BNS",
+    "expected_section": "14",
+    "role": "judge"
+  },
+  {
+    "id": 17,
+    "query": "Act of child under seven years of age is not an offence under BNS",
+    "expected_act": "BNS",
+    "expected_section": "20",
+    "role": "judge"
+  },
+  {
+    "id": 18,
+    "query": "Act of a person of unsound mind defence under BNS section 22",
+    "expected_act": "BNS",
+    "expected_section": "22",
+    "role": "lawyer"
+  },
+  {
+    "id": 19,
+    "query": "Right of private defence of body and property under Bharatiya Nyaya Sanhita",
+    "expected_act": "BNS",
+    "expected_section": "34",
+    "role": "judge"
+  },
+  {
+    "id": 20,
+    "query": "When the right of private defence of the body extends to causing death in BNS",
+    "expected_act": "BNS",
+    "expected_section": "38",
+    "role": "lawyer"
+  },
+  {
+    "id": 21,
+    "query": "Information in cognizable cases and registration of FIR under BNSS section 173",
+    "expected_act": "BNSS",
+    "expected_section": "173",
+    "role": "lawyer"
+  },
+  {
+    "id": 22,
+    "query": "When police may arrest without warrant under BNSS section 35",
+    "expected_act": "BNSS",
+    "expected_section": "35",
+    "role": "judge"
+  },
+  {
+    "id": 23,
+    "query": "Designated police officer and rights of arrested person under BNSS",
+    "expected_act": "BNSS",
+    "expected_section": "36",
+    "role": "lawyer"
+  },
+  {
+    "id": 24,
+    "query": "Procedure when investigation cannot be completed in twenty-four hours under BNSS section 187",
+    "expected_act": "BNSS",
+    "expected_section": "187",
+    "role": "judge"
+  },
+  {
+    "id": 25,
+    "query": "Police report on completion of investigation and chargesheet submission under BNSS",
+    "expected_act": "BNSS",
+    "expected_section": "193",
+    "role": "lawyer"
+  },
+  {
+    "id": 26,
+    "query": "In what cases bail to be taken in bailable offences under BNSS section 478",
+    "expected_act": "BNSS",
+    "expected_section": "478",
+    "role": "lawyer"
+  },
+  {
+    "id": 27,
+    "query": "When bail may be taken in case of non-bailable offence under BNSS",
+    "expected_act": "BNSS",
+    "expected_section": "480",
+    "role": "judge"
+  },
+  {
+    "id": 28,
+    "query": "Direction for grant of bail to person apprehending arrest or anticipatory bail BNSS",
+    "expected_act": "BNSS",
+    "expected_section": "482",
+    "role": "lawyer"
+  },
+  {
+    "id": 29,
+    "query": "Discharge of accused in trial before court of session under BNSS section 250",
+    "expected_act": "BNSS",
+    "expected_section": "250",
+    "role": "judge"
+  },
+  {
+    "id": 30,
+    "query": "Framing of charge in trial before Court of Session under BNSS section 251",
+    "expected_act": "BNSS",
+    "expected_section": "251",
+    "role": "judge"
+  },
+  {
+    "id": 31,
+    "query": "Acquittal or conviction in trial of warrant cases by Magistrates under BNSS section 269",
+    "expected_act": "BNSS",
+    "expected_section": "269",
+    "role": "judge"
+  },
+  {
+    "id": 32,
+    "query": "Application for plea bargaining and procedure under BNSS section 289",
+    "expected_act": "BNSS",
+    "expected_section": "289",
+    "role": "lawyer"
+  },
+  {
+    "id": 33,
+    "query": "Examination of witnesses by police during investigation under BNSS section 175",
+    "expected_act": "BNSS",
+    "expected_section": "175",
+    "role": "lawyer"
+  },
+  {
+    "id": 34,
+    "query": "Statements to police not to be signed and use of statements under BNSS section 182",
+    "expected_act": "BNSS",
+    "expected_section": "182",
+    "role": "lawyer"
+  },
+  {
+    "id": 35,
+    "query": "Power of Court to summon material witness or examine person present under BNSS section 349",
+    "expected_act": "BNSS",
+    "expected_section": "349",
+    "role": "judge"
+  },
+  {
+    "id": 36,
+    "query": "Definition of evidence, Court, and facts in issue under Bharatiya Sakshya Adhiniyam",
+    "expected_act": "BSA",
+    "expected_section": "2",
+    "role": "judge"
+  },
+  {
+    "id": 37,
+    "query": "Relevancy of facts forming part of same transaction under BSA section 4",
+    "expected_act": "BSA",
+    "expected_section": "4",
+    "role": "lawyer"
+  },
+  {
+    "id": 38,
+    "query": "Motive, preparation and previous or subsequent conduct under BSA section 6",
+    "expected_act": "BSA",
+    "expected_section": "6",
+    "role": "lawyer"
+  },
+  {
+    "id": 39,
+    "query": "Things said or done by conspirator in reference to common design under BSA",
+    "expected_act": "BSA",
+    "expected_section": "8",
+    "role": "lawyer"
+  },
+  {
+    "id": 40,
+    "query": "Plea of alibi and facts not otherwise relevant becoming relevant under BSA",
+    "expected_act": "BSA",
+    "expected_section": "9",
+    "role": "lawyer"
+  },
+  {
+    "id": 41,
+    "query": "Cases in which statement of relevant fact by person who is dead or cannot be found is relevant dying declaration BSA",
+    "expected_act": "BSA",
+    "expected_section": "26",
+    "role": "judge"
+  },
+  {
+    "id": 42,
+    "query": "Opinions of third persons when relevant expert opinion under BSA",
+    "expected_act": "BSA",
+    "expected_section": "39",
+    "role": "judge"
+  },
+  {
+    "id": 43,
+    "query": "Admissibility of electronic records and digital evidence certificate under BSA section 63",
+    "expected_act": "BSA",
+    "expected_section": "63",
+    "role": "lawyer"
+  },
+  {
+    "id": 44,
+    "query": "Burden of proof on whom lies under Bharatiya Sakshya Adhiniyam",
+    "expected_act": "BSA",
+    "expected_section": "104",
+    "role": "judge"
+  },
+  {
+    "id": 45,
+    "query": "Leading questions when they must not be asked in examination under BSA",
+    "expected_act": "BSA",
+    "expected_section": "146",
+    "role": "lawyer"
+  },
+  {
+    "id": 46,
+    "query": "Protection in respect of conviction for offences ex post facto law and double jeopardy Article 20",
+    "expected_act": "CONSTITUTION",
+    "expected_section": "20",
+    "role": "judge"
+  },
+  {
+    "id": 47,
+    "query": "Protection against self incrimination under Article 20 clause 3 of the Constitution",
+    "expected_act": "CONSTITUTION",
+    "expected_section": "20",
+    "role": "juror"
+  },
+  {
+    "id": 48,
+    "query": "Protection of life and personal liberty procedure established by law Article 21",
+    "expected_act": "CONSTITUTION",
+    "expected_section": "21",
+    "role": "juror"
+  },
+  {
+    "id": 49,
+    "query": "Protection against arrest and detention in certain cases right to consult legal practitioner Article 22",
+    "expected_act": "CONSTITUTION",
+    "expected_section": "22",
+    "role": "juror"
+  },
+  {
+    "id": 50,
+    "query": "Equality before law and equal protection of laws under Article 14 of the Constitution",
+    "expected_act": "CONSTITUTION",
+    "expected_section": "14",
+    "role": "judge"
+  }
+]

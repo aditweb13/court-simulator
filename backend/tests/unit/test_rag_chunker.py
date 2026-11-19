@@ -163,3 +163,53 @@ def test_split_long_section_at_subsections() -> None:
     # Missing act
     missing_act = RawSection(act="", section_no="3", title="Evidence", body="A" * 20)
     assert validate_section(missing_act) is False
+
+
+def test_ipc_bns_map() -> None:
+    from app.rag.ipc_bns_map import get_bns_equivalent, get_ipc_equivalent
+
+    assert get_ipc_equivalent("103") == "302"
+    assert get_bns_equivalent("302") == "103"
+    assert get_ipc_equivalent("318") == "415, 417, 420"
+    assert get_bns_equivalent("420") == "318"
+    assert get_ipc_equivalent("9999") is None
+
+
+def test_parse_act_markdown_bns() -> None:
+    from app.rag.chunker import parse_act_markdown
+
+    sample_bns_md = (
+        "**1.** ( _1_ ) ThisAct maybe called the Bharatiya Nyaya Sanhita, 2023.\n\n"
+        "Definitions.\n\n"
+        "**2.** In this Sanhita, unless the context otherwise requires,––\n\n"
+        "Punishment for murder.\n\n"
+        "**103.** (1) Whoever commits murder shall be punished with death or imprisonment for life."
+    )
+    sections = parse_act_markdown(sample_bns_md, act_name="BNS")
+    assert len(sections) == 3
+    assert sections[0].section_no == "1"
+    assert sections[1].section_no == "2"
+    assert sections[2].section_no == "103"
+    assert sections[2].ipc_equivalent == "302"
+    assert sections[2].audience == ["judge", "lawyer"]
+
+
+def test_parse_act_markdown_constitution() -> None:
+    from app.rag.chunker import parse_act_markdown
+
+    # Synthetic text simulating constitution after table of contents (> 40000 characters padding)
+    padding = "TABLE OF CONTENTS\n" * 2500
+    sample_const = (
+        padding
+        + "**20. Protection in respect of conviction for offences.** —(1) No person shall be convicted...\n\n"
+        + "**21. Protection of life and personal liberty.** —No person shall be deprived of his life...\n\n"
+        + "**50. Separation of judiciary from executive.** The State shall take steps to separate..."
+    )
+    sections = parse_act_markdown(sample_const, act_name="CONSTITUTION")
+    assert len(sections) == 3
+
+    sec_map = {s.section_no: s for s in sections}
+    assert "juror" in sec_map["20"].audience
+    assert "juror" in sec_map["21"].audience
+    assert "juror" not in sec_map["50"].audience
+    assert sec_map["50"].audience == ["judge", "lawyer"]

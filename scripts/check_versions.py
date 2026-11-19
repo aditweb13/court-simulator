@@ -1,9 +1,10 @@
 """Check installed and locked package versions against Architecture.md baselines."""
 
 import json
-from pathlib import Path
 import sys
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as get_pkg_version
+from pathlib import Path
 
 BASELINES = {
     # Backend
@@ -62,7 +63,7 @@ def get_backend_versions():
     for pkg in packages:
         try:
             results[pkg] = get_pkg_version(pkg)
-        except Exception:
+        except PackageNotFoundError:
             results[pkg] = "not installed"
     return results
 
@@ -94,7 +95,7 @@ def get_frontend_versions():
                     results[name] = packages[key].get("version", "unknown")
                 else:
                     results[name] = "not found"
-    except Exception as e:
+    except (OSError, json.JSONDecodeError) as e:
         results["error"] = str(e)
     return results
 

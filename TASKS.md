@@ -30,11 +30,11 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P3] Ingest BNS, then BNSS, then BSA (one task each, check licenses first)
 - [x] [P3] Ingest the Constitution, with Part III and Articles 20-22 tagged
 - [x] [P3] IPC to BNS mapping table and loader
-- [ ] [P3] Local embedding model wrapper (bge-m3) with batching
-- [ ] [P3] Reranker wrapper (bge-reranker-v2-m3)
-- [ ] [P3] Hybrid retrieval function with `audience` and `domain` filters
-- [ ] [P3] Citation checker that rejects sections not in the retrieved chunks
-- [ ] [P3] Retrieval test set (50 questions) and an accuracy script
+- [x] [P3] Local embedding model wrapper (bge-m3) with batching
+- [x] [P3] Reranker wrapper (bge-reranker-v2-m3)
+- [x] [P3] Hybrid retrieval function with `audience` and `domain` filters
+- [x] [P3] Citation checker that rejects sections not in the retrieved chunks
+- [x] [P3] Retrieval test set (50 questions) and an accuracy script
 - [ ] [P4] Write hand-made case 1 and the loader script
 - [ ] [P4] Write hand-made cases 2 and 3
 - [ ] [P4] `GET /cases` and `GET /cases/{id}` endpoints

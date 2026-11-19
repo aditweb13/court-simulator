@@ -65,3 +65,4 @@ def get_bns_equivalent(
     _, ipc_to_bns = load_concordance_map(map_path)
     clean_sec = ipc_section.split()[0].split("(")[0].strip()
     return ipc_to_bns.get(clean_sec)
+
