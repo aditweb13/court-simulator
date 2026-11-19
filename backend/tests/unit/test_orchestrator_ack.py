@@ -84,7 +84,7 @@ async def test_ack_loop_success_with_active_client(seeded_trial):
                 assert new_state["is_paused"] is False
                 assert new_state["turn_seq"] == 2
                 assert len(new_state["turns"]) == 2
-                assert new_state["current_phase"] == TrialPhase.CLOSINGS.value
+                assert new_state["current_phase"] == TrialPhase.EXAMINATION.value
         await ack_task
     finally:
         ws_manager.disconnect(trial_id, mock_ws)

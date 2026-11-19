@@ -102,3 +102,4 @@ describe("Trial Store (Zustand)", () => {
     expect(state.currentCameraShot).toBe("jury");
   });
 });
+

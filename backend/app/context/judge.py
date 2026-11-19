@@ -36,11 +36,7 @@ async def build_judge_context(
 ) -> Dict[str, Any]:
     """Assemble isolated courtroom context for the judge."""
     # 1. Load case (excluding truth!)
-    case_stmt = (
-        select(Case)
-        .options(selectinload(Case.evidence))
-        .where(Case.id == case_id)
-    )
+    case_stmt = select(Case).options(selectinload(Case.evidence)).where(Case.id == case_id)
     case_res = await db.execute(case_stmt)
     case_row = case_res.scalar_one_or_none()
     if case_row is None:

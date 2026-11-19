@@ -27,23 +27,17 @@ async def list_cases(
     req_id = get_request_id(request)
 
     ev_count_sub = (
-        select(func.count(Evidence.id))
-        .where(Evidence.case_id == Case.id)
-        .scalar_subquery()
+        select(func.count(Evidence.id)).where(Evidence.case_id == Case.id).scalar_subquery()
     )
     wit_count_sub = (
-        select(func.count(Witness.id))
-        .where(Witness.case_id == Case.id)
-        .scalar_subquery()
+        select(func.count(Witness.id)).where(Witness.case_id == Case.id).scalar_subquery()
     )
 
-    stmt = (
-        select(
-            Case,
-            ev_count_sub.label("evidence_count"),
-            wit_count_sub.label("witness_count"),
-        ).order_by(Case.created_at.desc())
-    )
+    stmt = select(
+        Case,
+        ev_count_sub.label("evidence_count"),
+        wit_count_sub.label("witness_count"),
+    ).order_by(Case.created_at.desc())
     result = await db.execute(stmt)
     rows = result.all()
 
@@ -74,10 +68,7 @@ async def get_case(
 ) -> SuccessResponse[CaseDetail]:
     req_id = get_request_id(request)
 
-    stmt = (
-        select(Case)
-        .options(selectinload(Case.evidence), selectinload(Case.witnesses))
-    )
+    stmt = select(Case).options(selectinload(Case.evidence), selectinload(Case.witnesses))
     try:
         parsed_uuid = uuid.UUID(case_id)
         stmt = stmt.where(Case.id == parsed_uuid)
@@ -127,4 +118,3 @@ async def get_case(
     )
 
     return SuccessResponse(data=detail, meta=Meta(request_id=req_id))
-

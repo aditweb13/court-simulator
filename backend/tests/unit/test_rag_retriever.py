@@ -35,9 +35,7 @@ class TestExtractExactCitation:
         assert extract_exact_citation("Article 21") == ("CONSTITUTION", "21")
 
     def test_article_of_constitution(self) -> None:
-        assert extract_exact_citation(
-            "Article 20 of the Constitution"
-        ) == ("CONSTITUTION", "20")
+        assert extract_exact_citation("Article 20 of the Constitution") == ("CONSTITUTION", "20")
 
     def test_ipc_to_bns_concordance(self) -> None:
         # IPC 302 -> BNS 103
@@ -93,9 +91,7 @@ class TestCleanFtsQuery:
 # ---------------------------------------------------------------------------
 # _reciprocal_rank_fusion
 # ---------------------------------------------------------------------------
-def _make_chunk(
-    section_no: str, act: str = "BNS", chunk_id: UUID | None = None
-) -> RetrievedChunk:
+def _make_chunk(section_no: str, act: str = "BNS", chunk_id: UUID | None = None) -> RetrievedChunk:
     """Helper to create a mock RetrievedChunk for RRF tests."""
     # We're using RetrievedChunk directly for lightweight testing.
     # _reciprocal_rank_fusion expects KnowledgeChunk objects, so we
@@ -154,4 +150,3 @@ class TestReciprocalRankFusion:
     def test_empty_lists(self) -> None:
         result = _reciprocal_rank_fusion([], k=60)
         assert result == []
-

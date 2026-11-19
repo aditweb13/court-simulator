@@ -144,4 +144,3 @@ def classify_status(status_code: int) -> AttemptOutcome:
         return AttemptOutcome.SKIP_PROVIDER
     # 429, 5xx, or any other unexpected status
     return AttemptOutcome.ERROR
-

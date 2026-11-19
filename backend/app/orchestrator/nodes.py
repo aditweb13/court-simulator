@@ -21,23 +21,46 @@ from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.context.clerk import build_clerk_context, build_clerk_opening_prompt
+from app.context.defense import (
+    build_defense_closing_prompt,
+    build_defense_context,
+    build_defense_examination_prompt,
+    build_defense_objection_prompt,
+)
 from app.context.judge import (
     build_judge_closing_prompt,
     build_judge_context,
     build_judge_opening_prompt,
 )
+from app.context.prosecutor import (
+    build_prosecutor_closing_prompt,
+    build_prosecutor_context,
+    build_prosecutor_examination_prompt,
+    build_prosecutor_objection_prompt,
+)
+from app.context.witness import build_witness_answer_prompt, build_witness_context
 from app.db.models.case import Case
-from app.db.models.trial import Agent, Trial, Turn
+from app.db.models.trial import Agent, Trial, Turn, TurnEmbedding
 from app.llm.router import chat
 from app.orchestrator.schemas import (
     ClerkAnnouncementOutput,
     ClosingArgumentOutput,
+    ExaminationQuestionOutput,
     JudgeClosingOutput,
     JudgeOpeningOutput,
+    ObjectionOutput,
+    WitnessAnswerOutput,
 )
 from app.orchestrator.state import CourtroomState, TrialPhase
+from app.rag.embeddings import get_embedder
+from app.rules import (
+    check_objection_quota,
+    get_statutory_basis,
+    is_leading_question_permitted,
+    is_valid_objection_ground,
+)
 from app.ws.connection import manager as ws_manager
-from app.ws.schemas import LineEvent, StateEvent
+from app.ws.schemas import LineEvent, RulingEvent, StateEvent
 
 logger = logging.getLogger("app.orchestrator")
 
@@ -46,11 +69,23 @@ async def _get_agent_by_role(
     db: AsyncSession,
     trial_id: UUID,
     role: str,
+    name: Optional[str] = None,
 ) -> Optional[Agent]:
-    """Fetch a single agent row by trial and role."""
+    """Fetch an agent row by trial and role.
+
+    If name is provided, matches persona['name'] (for multi-agent roles like witness/juror).
+    Otherwise returns the first matching agent.
+    """
     stmt = select(Agent).where(Agent.trial_id == trial_id, Agent.role == role)
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()
+    agents = result.scalars().all()
+    if not agents:
+        return None
+    if name:
+        for a in agents:
+            if isinstance(a.persona, dict) and a.persona.get("name") == name:
+                return a
+    return agents[0]
 
 
 async def _persist_turn(
@@ -63,8 +98,11 @@ async def _persist_turn(
     action: Optional[str] = None,
     emotion: Optional[str] = None,
     camera: Optional[str] = "wide",
+    objection: Optional[Dict[str, Any]] = None,
+    admitted: bool = True,
+    struck: bool = False,
 ) -> Turn:
-    """Create and flush a Turn row."""
+    """Create, flush, and embed a Turn row."""
     turn = Turn(
         trial_id=trial_id,
         seq=seq,
@@ -74,10 +112,43 @@ async def _persist_turn(
         action=action,
         emotion=emotion,
         camera=camera,
+        objection=objection,
+        admitted=admitted,
+        struck=struck,
     )
     db.add(turn)
     await db.flush()
+
+    # Persist vector embedding for juror retrieval
+    try:
+        embedder = get_embedder()
+        emb_vec = embedder.embed_query(text)
+        turn_emb = TurnEmbedding(
+            turn_id=turn.id,
+            trial_id=trial_id,
+            embedding=emb_vec,
+        )
+        db.add(turn_emb)
+        await db.flush()
+    except Exception as exc:
+        logger.warning("Failed to store embedding for turn %d: %s", seq, exc)
+
     return turn
+
+
+async def mark_turn_struck(
+    db: AsyncSession,
+    trial_id: UUID,
+    seq: int,
+) -> None:
+    """Flag a turn as struck from the court record following a sustained objection."""
+    stmt = select(Turn).where(Turn.trial_id == trial_id, Turn.seq == seq)
+    res = await db.execute(stmt)
+    turn_row = res.scalar_one_or_none()
+    if turn_row:
+        turn_row.struck = True
+        await db.flush()
+        logger.info("Marked turn seq %d struck for trial %s", seq, trial_id)
 
 
 async def _send_line(
@@ -365,9 +436,9 @@ async def openings_node(
 
     await db.commit()
 
-    # Transition to next phase (EXAMINATION in Phase 6, skip to CLOSINGS for now)
+    # Transition to next phase (EXAMINATION)
     previous = state["current_phase"]
-    new_phase = TrialPhase.CLOSINGS.value
+    new_phase = TrialPhase.EXAMINATION.value
     await _update_trial_state(db, trial_id, new_phase)
     await _send_state(trial_id, new_phase, previous)
     await db.commit()
@@ -386,6 +457,698 @@ async def openings_node(
         "turn_seq": seq,
         "turns": turns_generated,
         "active_speaker": "clerk",
+    }
+
+
+# ---------------------------------------------------------------------------
+# Node: EXAMINATION
+# ---------------------------------------------------------------------------
+
+
+async def examination_node(
+    state: CourtroomState,
+    db: AsyncSession,
+) -> CourtroomState:
+    """Orchestrate witness examination (direct, cross, redirect), objections, and rulings.
+
+    Under the Bharatiya Sakshya Adhiniyam, 2023 (BSA Section 142):
+    1. Direct examination (examination-in-chief) by the calling party (Prosecutor).
+       Leading questions are prohibited under BSA Section 146.
+    2. Objection evaluation by opposing counsel (Defense). If an objection is raised:
+       - Objection turn is persisted and broadcast to clients.
+       - Judge evaluates and delivers formal Ruling (sustained or overruled).
+       - If sustained, the impermissible question is marked struck from the record.
+    3. Witness testifies from their personal memory slice (derived from saw_event_ids).
+    4. Cross-examination by opposing counsel (Defense).
+       Leading questions are permitted under BSA Section 146(3).
+    5. Re-examination (Redirect) by calling party (Prosecutor).
+    """
+    trial_id = state["trial_id"]
+    case_id = state["case_id"]
+    seq = state["turn_seq"]
+    logger.info("examination_node: trial %s, starting at seq %d", trial_id, seq)
+
+    # 1. Load case with witnesses and evidence
+    case_stmt = (
+        select(Case)
+        .options(selectinload(Case.witnesses), selectinload(Case.evidence))
+        .where(Case.id == case_id)
+    )
+    case_result = await db.execute(case_stmt)
+    case_row = case_result.scalar_one_or_none()
+    if case_row is None:
+        return {**state, "error": f"Case {case_id} not found"}
+
+    # 2. Fetch participating agents
+    prosecutor_agent = await _get_agent_by_role(db, trial_id, "prosecutor")
+    defense_agent = await _get_agent_by_role(db, trial_id, "defense")
+    judge_agent = await _get_agent_by_role(db, trial_id, "judge")
+
+    turns_generated: List[Dict[str, Any]] = list(state.get("turns", []))
+    defense_objections_count = 0
+    prosecutor_objections_count = 0
+
+    # 3. Examine witnesses (examine first available witness)
+    witnesses = case_row.witnesses or []
+    if not witnesses:
+        logger.warning(
+            "examination_node: trial %s has no witnesses, skipping to closings", trial_id
+        )
+    else:
+        witness = witnesses[0]
+        witness_name = witness.name
+        witness_agent = await _get_agent_by_role(db, trial_id, "witness", name=witness_name)
+
+        # --- A. DIRECT EXAMINATION (Prosecution) ---
+        pros_ctx = await build_prosecutor_context(db, trial_id, case_id, witness_name=witness_name)
+        pros_messages = build_prosecutor_examination_prompt(pros_ctx, witness_name, stage="direct")
+
+        direct_q: ExaminationQuestionOutput = await chat(
+            tier="strong",
+            messages=pros_messages,
+            response_model=ExaminationQuestionOutput,
+            trial_id=trial_id,
+            agent_role="prosecutor",
+        )
+
+        await _persist_turn(
+            db=db,
+            trial_id=trial_id,
+            seq=seq,
+            agent_id=prosecutor_agent.id if prosecutor_agent else None,
+            speaker_role="prosecutor",
+            text=direct_q.text,
+            action=direct_q.action,
+            emotion=direct_q.emotion,
+            camera="prosecution",
+        )
+        ack_ok = await _send_and_wait_ack(
+            trial_id=trial_id,
+            seq=seq,
+            speaker="prosecutor",
+            text=direct_q.text,
+            action=direct_q.action,
+            emotion=direct_q.emotion,
+            camera="prosecution",
+        )
+        turns_generated.append({"seq": seq, "speaker": "prosecutor", "text": direct_q.text})
+        direct_q_seq = seq
+        seq += 1
+
+        if not ack_ok:
+            return await _pause_trial(
+                db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+            )
+
+        # --- B. DEFENSE OBJECTION EVALUATION ---
+        def_ctx = await build_defense_context(db, trial_id, case_id, witness_name=witness_name)
+        obj_messages = build_defense_objection_prompt(def_ctx, direct_q.text, stage="direct")
+
+        obj_output: ObjectionOutput = await chat(
+            tier="strong",
+            messages=obj_messages,
+            response_model=ObjectionOutput,
+            trial_id=trial_id,
+            agent_role="defense",
+        )
+
+        objection_sustained = False
+        if obj_output.raise_objection and check_objection_quota(defense_objections_count):
+            defense_objections_count += 1
+            objection_ground = obj_output.objection_type or "hearsay"
+            statutory_basis = (
+                obj_output.legal_basis or get_statutory_basis(objection_ground) or "BSA 2023"
+            )
+            objection_text = (
+                obj_output.argument
+                or f"Objection, Your Honour! Impermissible under {statutory_basis}."
+            )
+
+            # Persist defense objection turn
+            await _persist_turn(
+                db=db,
+                trial_id=trial_id,
+                seq=seq,
+                agent_id=defense_agent.id if defense_agent else None,
+                speaker_role="defense",
+                text=objection_text,
+                action="stand",
+                emotion="firm",
+                camera="defense",
+                objection={"type": objection_ground, "basis": statutory_basis},
+            )
+            ack_ok = await _send_and_wait_ack(
+                trial_id=trial_id,
+                seq=seq,
+                speaker="defense",
+                text=objection_text,
+                action="stand",
+                emotion="firm",
+                camera="defense",
+            )
+            turns_generated.append({"seq": seq, "speaker": "defense", "text": objection_text})
+            seq += 1
+
+            if not ack_ok:
+                return await _pause_trial(
+                    db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+                )
+
+            # --- JUDGE RULES ON OBJECTION ---
+            is_valid = is_valid_objection_ground(objection_ground)
+            # Under Indian Law, leading questions on direct are strictly sustained
+            if objection_ground == "leading" and not is_leading_question_permitted("direct"):
+                objection_sustained = True
+            elif is_valid:
+                objection_sustained = True
+            else:
+                objection_sustained = False
+
+            ruling_decision = "sustained" if objection_sustained else "overruled"
+            ruling_text = f"Objection {ruling_decision.upper()}. " + (
+                f"Under {statutory_basis}, question is improper; witness will not answer."
+                if objection_sustained
+                else "The question is permissible. The witness shall answer."
+            )
+
+            await _persist_turn(
+                db=db,
+                trial_id=trial_id,
+                seq=seq,
+                agent_id=judge_agent.id if judge_agent else None,
+                speaker_role="judge",
+                text=ruling_text,
+                action="gavel",
+                emotion="neutral",
+                camera="judge",
+                objection={
+                    "ruling": ruling_decision,
+                    "ground": objection_ground,
+                    "struck": objection_sustained,
+                },
+            )
+            # Broadcast official RulingEvent
+            await ws_manager.send_event(
+                trial_id,
+                RulingEvent(
+                    seq=seq,
+                    objection_type=objection_ground,
+                    ruling="sustained" if objection_sustained else "overruled",
+                    struck=objection_sustained,
+                    reason=ruling_text,
+                ),
+            )
+            ack_ok = await _send_and_wait_ack(
+                trial_id=trial_id,
+                seq=seq,
+                speaker="judge",
+                text=ruling_text,
+                action="gavel",
+                emotion="neutral",
+                camera="judge",
+            )
+            turns_generated.append({"seq": seq, "speaker": "judge", "text": ruling_text})
+            seq += 1
+
+            if objection_sustained:
+                await mark_turn_struck(db, trial_id, direct_q_seq)
+
+            if not ack_ok:
+                return await _pause_trial(
+                    db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+                )
+
+        # --- C. WITNESS ANSWERS DIRECT ---
+        # If objection was sustained on the question, counsel asks a rephrased foundation question
+        direct_question_for_witness = direct_q.text
+        if objection_sustained:
+            direct_question_for_witness = (
+                f"Please tell the Court what you personally saw at the scene, {witness_name}."
+            )
+
+        w_ctx = await build_witness_context(db, trial_id, witness_name, direct_question_for_witness)
+        w_messages = build_witness_answer_prompt(w_ctx)
+
+        witness_answer: WitnessAnswerOutput = await chat(
+            tier="mid",
+            messages=w_messages,
+            response_model=WitnessAnswerOutput,
+            trial_id=trial_id,
+            agent_role="witness",
+        )
+
+        await _persist_turn(
+            db=db,
+            trial_id=trial_id,
+            seq=seq,
+            agent_id=witness_agent.id if witness_agent else None,
+            speaker_role="witness",
+            text=witness_answer.text,
+            action=witness_answer.action,
+            emotion=witness_answer.emotion,
+            camera="witness",
+        )
+        ack_ok = await _send_and_wait_ack(
+            trial_id=trial_id,
+            seq=seq,
+            speaker="witness",
+            text=witness_answer.text,
+            action=witness_answer.action,
+            emotion=witness_answer.emotion,
+            camera="witness",
+        )
+        turns_generated.append({"seq": seq, "speaker": "witness", "text": witness_answer.text})
+        seq += 1
+
+        if not ack_ok:
+            return await _pause_trial(
+                db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+            )
+
+        # --- D. CROSS-EXAMINATION (Defense) ---
+        def_ctx = await build_defense_context(db, trial_id, case_id, witness_name=witness_name)
+        cross_messages = build_defense_examination_prompt(def_ctx, witness_name, stage="cross")
+
+        cross_q: ExaminationQuestionOutput = await chat(
+            tier="strong",
+            messages=cross_messages,
+            response_model=ExaminationQuestionOutput,
+            trial_id=trial_id,
+            agent_role="defense",
+        )
+
+        await _persist_turn(
+            db=db,
+            trial_id=trial_id,
+            seq=seq,
+            agent_id=defense_agent.id if defense_agent else None,
+            speaker_role="defense",
+            text=cross_q.text,
+            action=cross_q.action,
+            emotion=cross_q.emotion,
+            camera="defense",
+        )
+        ack_ok = await _send_and_wait_ack(
+            trial_id=trial_id,
+            seq=seq,
+            speaker="defense",
+            text=cross_q.text,
+            action=cross_q.action,
+            emotion=cross_q.emotion,
+            camera="defense",
+        )
+        turns_generated.append({"seq": seq, "speaker": "defense", "text": cross_q.text})
+        cross_q_seq = seq
+        seq += 1
+
+        if not ack_ok:
+            return await _pause_trial(
+                db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+            )
+
+        # Prosecution evaluates objection to cross-examination question
+        pros_ctx = await build_prosecutor_context(db, trial_id, case_id, witness_name=witness_name)
+        pros_obj_messages = build_prosecutor_objection_prompt(pros_ctx, cross_q.text, stage="cross")
+        pros_obj_output: ObjectionOutput = await chat(
+            tier="strong",
+            messages=pros_obj_messages,
+            response_model=ObjectionOutput,
+            trial_id=trial_id,
+            agent_role="prosecutor",
+        )
+
+        objection_sustained = False
+        if pros_obj_output.raise_objection and check_objection_quota(prosecutor_objections_count):
+            prosecutor_objections_count += 1
+            objection_ground = pros_obj_output.objection_type or "relevance"
+            statutory_basis = (
+                pros_obj_output.legal_basis or get_statutory_basis(objection_ground) or "BSA 2023"
+            )
+            objection_text = (
+                pros_obj_output.argument
+                or f"Objection, Your Honour! Impermissible under {statutory_basis}."
+            )
+
+            await _persist_turn(
+                db=db,
+                trial_id=trial_id,
+                seq=seq,
+                agent_id=prosecutor_agent.id if prosecutor_agent else None,
+                speaker_role="prosecutor",
+                text=objection_text,
+                action="stand",
+                emotion="firm",
+                camera="prosecution",
+                objection={"type": objection_ground, "basis": statutory_basis},
+            )
+            ack_ok = await _send_and_wait_ack(
+                trial_id=trial_id,
+                seq=seq,
+                speaker="prosecutor",
+                text=objection_text,
+                action="stand",
+                emotion="firm",
+                camera="prosecution",
+            )
+            turns_generated.append({"seq": seq, "speaker": "prosecutor", "text": objection_text})
+            seq += 1
+
+            if not ack_ok:
+                return await _pause_trial(
+                    db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+                )
+
+            # Judge rules on prosecution objection
+            if objection_ground == "leading" and is_leading_question_permitted("cross"):
+                objection_sustained = False
+            elif is_valid_objection_ground(objection_ground):
+                objection_sustained = True
+            else:
+                objection_sustained = False
+
+            ruling_decision = "sustained" if objection_sustained else "overruled"
+            ruling_text = f"Objection {ruling_decision.upper()}. " + (
+                f"Under {statutory_basis}, question is improper; counsel will rephrase."
+                if objection_sustained
+                else (
+                    "Under Section 146(3) of BSA 2023, "
+                    "leading questions are permitted on cross-examination."
+                    if objection_ground == "leading"
+                    else "The question is permissible. The witness shall answer."
+                )
+            )
+
+            await _persist_turn(
+                db=db,
+                trial_id=trial_id,
+                seq=seq,
+                agent_id=judge_agent.id if judge_agent else None,
+                speaker_role="judge",
+                text=ruling_text,
+                action="gavel",
+                emotion="neutral",
+                camera="judge",
+                objection={
+                    "ruling": ruling_decision,
+                    "ground": objection_ground,
+                    "struck": objection_sustained,
+                },
+            )
+            await ws_manager.send_event(
+                trial_id,
+                RulingEvent(
+                    seq=seq,
+                    objection_type=objection_ground,
+                    ruling="sustained" if objection_sustained else "overruled",
+                    struck=objection_sustained,
+                    reason=ruling_text,
+                ),
+            )
+            ack_ok = await _send_and_wait_ack(
+                trial_id=trial_id,
+                seq=seq,
+                speaker="judge",
+                text=ruling_text,
+                action="gavel",
+                emotion="neutral",
+                camera="judge",
+            )
+            turns_generated.append({"seq": seq, "speaker": "judge", "text": ruling_text})
+            seq += 1
+
+            if objection_sustained:
+                await mark_turn_struck(db, trial_id, cross_q_seq)
+
+            if not ack_ok:
+                return await _pause_trial(
+                    db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+                )
+
+        # Witness answers cross-examination
+        w_cross_ctx = await build_witness_context(db, trial_id, witness_name, cross_q.text)
+        w_cross_messages = build_witness_answer_prompt(w_cross_ctx)
+
+        witness_cross_ans: WitnessAnswerOutput = await chat(
+            tier="mid",
+            messages=w_cross_messages,
+            response_model=WitnessAnswerOutput,
+            trial_id=trial_id,
+            agent_role="witness",
+        )
+
+        await _persist_turn(
+            db=db,
+            trial_id=trial_id,
+            seq=seq,
+            agent_id=witness_agent.id if witness_agent else None,
+            speaker_role="witness",
+            text=witness_cross_ans.text,
+            action="talk",
+            emotion=witness_cross_ans.emotion,
+            camera="witness",
+        )
+        ack_ok = await _send_and_wait_ack(
+            trial_id=trial_id,
+            seq=seq,
+            speaker="witness",
+            text=witness_cross_ans.text,
+            action="talk",
+            emotion=witness_cross_ans.emotion,
+            camera="witness",
+        )
+        turns_generated.append({"seq": seq, "speaker": "witness", "text": witness_cross_ans.text})
+        seq += 1
+
+        if not ack_ok:
+            return await _pause_trial(
+                db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+            )
+
+        # --- E. REDIRECT EXAMINATION (Prosecution) ---
+        pros_redirect_ctx = await build_prosecutor_context(
+            db, trial_id, case_id, witness_name=witness_name
+        )
+        redirect_messages = build_prosecutor_examination_prompt(
+            pros_redirect_ctx, witness_name, stage="redirect"
+        )
+
+        redirect_q: ExaminationQuestionOutput = await chat(
+            tier="strong",
+            messages=redirect_messages,
+            response_model=ExaminationQuestionOutput,
+            trial_id=trial_id,
+            agent_role="prosecutor",
+        )
+
+        await _persist_turn(
+            db=db,
+            trial_id=trial_id,
+            seq=seq,
+            agent_id=prosecutor_agent.id if prosecutor_agent else None,
+            speaker_role="prosecutor",
+            text=redirect_q.text,
+            action=redirect_q.action,
+            emotion=redirect_q.emotion,
+            camera="prosecution",
+        )
+        ack_ok = await _send_and_wait_ack(
+            trial_id=trial_id,
+            seq=seq,
+            speaker="prosecutor",
+            text=redirect_q.text,
+            action=redirect_q.action,
+            emotion=redirect_q.emotion,
+            camera="prosecution",
+        )
+        turns_generated.append({"seq": seq, "speaker": "prosecutor", "text": redirect_q.text})
+        redirect_q_seq = seq
+        seq += 1
+
+        if not ack_ok:
+            return await _pause_trial(
+                db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+            )
+
+        # Defense evaluates objection to redirect question
+        def_redirect_ctx = await build_defense_context(
+            db, trial_id, case_id, witness_name=witness_name
+        )
+        def_obj_messages = build_defense_objection_prompt(
+            def_redirect_ctx, redirect_q.text, stage="redirect"
+        )
+        def_obj_output: ObjectionOutput = await chat(
+            tier="strong",
+            messages=def_obj_messages,
+            response_model=ObjectionOutput,
+            trial_id=trial_id,
+            agent_role="defense",
+        )
+
+        objection_sustained = False
+        if def_obj_output.raise_objection and check_objection_quota(defense_objections_count):
+            defense_objections_count += 1
+            objection_ground = def_obj_output.objection_type or "relevance"
+            statutory_basis = (
+                def_obj_output.legal_basis or get_statutory_basis(objection_ground) or "BSA 2023"
+            )
+            objection_text = (
+                def_obj_output.argument
+                or f"Objection, Your Honour! Impermissible under {statutory_basis}."
+            )
+
+            await _persist_turn(
+                db=db,
+                trial_id=trial_id,
+                seq=seq,
+                agent_id=defense_agent.id if defense_agent else None,
+                speaker_role="defense",
+                text=objection_text,
+                action="stand",
+                emotion="firm",
+                camera="defense",
+                objection={"type": objection_ground, "basis": statutory_basis},
+            )
+            ack_ok = await _send_and_wait_ack(
+                trial_id=trial_id,
+                seq=seq,
+                speaker="defense",
+                text=objection_text,
+                action="stand",
+                emotion="firm",
+                camera="defense",
+            )
+            turns_generated.append({"seq": seq, "speaker": "defense", "text": objection_text})
+            seq += 1
+
+            if not ack_ok:
+                return await _pause_trial(
+                    db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+                )
+
+            # Judge rules on defense objection during redirect
+            # Leading questions on redirect are PROHIBITED under BSA 146(1)
+            if objection_ground == "leading" and not is_leading_question_permitted("redirect"):
+                objection_sustained = True
+            elif is_valid_objection_ground(objection_ground):
+                objection_sustained = True
+            else:
+                objection_sustained = False
+
+            ruling_decision = "sustained" if objection_sustained else "overruled"
+            ruling_text = f"Objection {ruling_decision.upper()}. " + (
+                f"Under {statutory_basis}, question is improper; counsel will rephrase."
+                if objection_sustained
+                else "The question is permissible. The witness shall answer."
+            )
+
+            await _persist_turn(
+                db=db,
+                trial_id=trial_id,
+                seq=seq,
+                agent_id=judge_agent.id if judge_agent else None,
+                speaker_role="judge",
+                text=ruling_text,
+                action="gavel",
+                emotion="neutral",
+                camera="judge",
+                objection={
+                    "ruling": ruling_decision,
+                    "ground": objection_ground,
+                    "struck": objection_sustained,
+                },
+            )
+            await ws_manager.send_event(
+                trial_id,
+                RulingEvent(
+                    seq=seq,
+                    objection_type=objection_ground,
+                    ruling="sustained" if objection_sustained else "overruled",
+                    struck=objection_sustained,
+                    reason=ruling_text,
+                ),
+            )
+            ack_ok = await _send_and_wait_ack(
+                trial_id=trial_id,
+                seq=seq,
+                speaker="judge",
+                text=ruling_text,
+                action="gavel",
+                emotion="neutral",
+                camera="judge",
+            )
+            turns_generated.append({"seq": seq, "speaker": "judge", "text": ruling_text})
+            seq += 1
+
+            if objection_sustained:
+                await mark_turn_struck(db, trial_id, redirect_q_seq)
+
+            if not ack_ok:
+                return await _pause_trial(
+                    db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+                )
+
+        # Witness answers redirect
+        w_redir_ctx = await build_witness_context(db, trial_id, witness_name, redirect_q.text)
+        w_redir_messages = build_witness_answer_prompt(w_redir_ctx)
+
+        witness_redir_ans: WitnessAnswerOutput = await chat(
+            tier="mid",
+            messages=w_redir_messages,
+            response_model=WitnessAnswerOutput,
+            trial_id=trial_id,
+            agent_role="witness",
+        )
+
+        await _persist_turn(
+            db=db,
+            trial_id=trial_id,
+            seq=seq,
+            agent_id=witness_agent.id if witness_agent else None,
+            speaker_role="witness",
+            text=witness_redir_ans.text,
+            action="talk",
+            emotion=witness_redir_ans.emotion,
+            camera="witness",
+        )
+        ack_ok = await _send_and_wait_ack(
+            trial_id=trial_id,
+            seq=seq,
+            speaker="witness",
+            text=witness_redir_ans.text,
+            action="talk",
+            emotion=witness_redir_ans.emotion,
+            camera="witness",
+        )
+        turns_generated.append({"seq": seq, "speaker": "witness", "text": witness_redir_ans.text})
+        seq += 1
+
+        if not ack_ok:
+            return await _pause_trial(
+                db, {**state, "turns": turns_generated, "turn_seq": seq}, trial_id
+            )
+
+    # 4. Transition to CLOSINGS phase
+    await db.commit()
+    previous = TrialPhase.EXAMINATION.value
+    new_phase = TrialPhase.CLOSINGS.value
+    await _update_trial_state(db, trial_id, new_phase)
+    await _send_state(trial_id, new_phase, previous)
+    await db.commit()
+
+    logger.info(
+        "examination_node: trial %s finished examination, transitioning to %s (turn seq: %d)",
+        trial_id,
+        new_phase,
+        seq,
+    )
+
+    return {
+        **state,
+        "current_phase": new_phase,
+        "previous_phase": previous,
+        "turn_seq": seq,
+        "turns": turns_generated,
+        "active_speaker": "witness",
     }
 
 
@@ -415,9 +1178,6 @@ async def closings_node(
     if case_row is None:
         return {**state, "error": f"Case {case_id} not found"}
 
-    charge_text = case_row.charge
-    case_title = case_row.title
-
     # Fetch agents
     prosecutor_agent = await _get_agent_by_role(db, trial_id, "prosecutor")
     defense_agent = await _get_agent_by_role(db, trial_id, "defense")
@@ -426,23 +1186,8 @@ async def closings_node(
     turns_generated: List[Dict[str, Any]] = list(state.get("turns", []))
 
     # --- 1. Prosecution closing ---
-    prosecution_messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are the Prosecution counsel in an Indian criminal court. "
-                "Deliver a compelling closing argument summarizing the case "
-                "against the accused. Be persuasive and reference the charge. "
-                "Keep it under 150 words."
-            ),
-        },
-        {
-            "role": "user",
-            "content": (
-                f"Case: {case_title}\nCharge: {charge_text}\n\nDeliver your closing argument."
-            ),
-        },
-    ]
+    pros_closing_ctx = await build_prosecutor_context(db, trial_id, case_id)
+    prosecution_messages = build_prosecutor_closing_prompt(pros_closing_ctx)
 
     prosecution_output: ClosingArgumentOutput = await chat(
         tier="strong",
@@ -483,23 +1228,8 @@ async def closings_node(
         )
 
     # --- 2. Defense closing ---
-    defense_messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are the Defense counsel in an Indian criminal court. "
-                "Deliver a compelling closing argument defending the accused. "
-                "Raise reasonable doubt and advocate for acquittal. "
-                "Keep it under 150 words."
-            ),
-        },
-        {
-            "role": "user",
-            "content": (
-                f"Case: {case_title}\nCharge: {charge_text}\n\nDeliver your closing argument."
-            ),
-        },
-    ]
+    def_closing_ctx = await build_defense_context(db, trial_id, case_id)
+    defense_messages = build_defense_closing_prompt(def_closing_ctx)
 
     defense_output: ClosingArgumentOutput = await chat(
         tier="strong",

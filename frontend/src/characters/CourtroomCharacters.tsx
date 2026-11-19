@@ -180,3 +180,4 @@ export function CourtroomCharacters({
     </group>
   );
 }
+

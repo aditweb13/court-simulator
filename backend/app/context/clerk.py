@@ -73,4 +73,3 @@ def build_clerk_opening_prompt(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
     ]
-

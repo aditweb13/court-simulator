@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.trial import Trial
-from app.orchestrator.nodes import closings_node, openings_node, setup_node
+from app.orchestrator.nodes import closings_node, examination_node, openings_node, setup_node
 from app.orchestrator.state import CourtroomState, TrialPhase
 
 logger = logging.getLogger("app.orchestrator")
@@ -56,6 +56,14 @@ async def _run_openings(
     return await openings_node(state, db)
 
 
+async def _run_examination(
+    state: CourtroomState,
+    config: Optional[RunnableConfig] = None,
+) -> CourtroomState:
+    db = _extract_db(config)
+    return await examination_node(state, db)
+
+
 async def _run_closings(
     state: CourtroomState,
     config: Optional[RunnableConfig] = None,
@@ -77,10 +85,14 @@ def _route_after_setup(state: CourtroomState) -> str:
 
 
 def _route_after_openings(state: CourtroomState) -> str:
-    """Route from openings: halt on error/pause, otherwise proceed to closings.
+    """Route from openings: halt on error/pause, otherwise proceed to examination."""
+    if state.get("error") or state.get("is_paused"):
+        return END
+    return "examination"
 
-    Phase 6 will route to 'examination' before closings.
-    """
+
+def _route_after_examination(state: CourtroomState) -> str:
+    """Route from examination: halt on error/pause, otherwise proceed to closings."""
     if state.get("error") or state.get("is_paused"):
         return END
     return "closings"
@@ -106,6 +118,7 @@ def build_courtroom_graph() -> CompiledStateGraph:
     # 1. Register nodes
     builder.add_node("setup", _run_setup)
     builder.add_node("openings", _run_openings)
+    builder.add_node("examination", _run_examination)
     builder.add_node("closings", _run_closings)
 
     # 2. Add edges & conditional routing
@@ -118,6 +131,11 @@ def build_courtroom_graph() -> CompiledStateGraph:
     builder.add_conditional_edges(
         "openings",
         _route_after_openings,
+        {"examination": "examination", END: END},
+    )
+    builder.add_conditional_edges(
+        "examination",
+        _route_after_examination,
         {"closings": "closings", END: END},
     )
     builder.add_conditional_edges(

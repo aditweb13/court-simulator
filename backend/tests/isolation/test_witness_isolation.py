@@ -56,10 +56,9 @@ def test_witness_isolation_on_all_cases(case_data: CaseSchema) -> None:
                 query="What happened during this event?",
                 target_event_id=unseen_id,
             )
-            assert (
-                "no knowledge" in response.lower()
-                or "not present" in response.lower()
-            ), f"Witness '{witness.name}' leaked knowledge of unseen event {unseen_id}!"
+            assert "no knowledge" in response.lower() or "not present" in response.lower(), (
+                f"Witness '{witness.name}' leaked knowledge of unseen event {unseen_id}!"
+            )
 
         # 3. Formatted prompt must not leak unseen locations or event-exclusive keywords
         prompt = memory.format_for_prompt()

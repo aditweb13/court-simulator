@@ -464,16 +464,14 @@ def parse_act_markdown(
     total_raw_len = len(raw_markdown)
 
     for i, (sec, start_idx, end_idx) in enumerate(statute_matches):
-        next_start = (
-            statute_matches[i + 1][1] if i + 1 < len(statute_matches) else total_raw_len
-        )
+        next_start = statute_matches[i + 1][1] if i + 1 < len(statute_matches) else total_raw_len
         raw_body = raw_markdown[end_idx:next_start]
         cleaned_body = clean_legal_text(strip_gazette_noise(raw_body))
         if not cleaned_body:
             continue
 
         # Look for marginal title immediately preceding the section header
-        prefix = raw_markdown[max(0, start_idx - 120):start_idx].strip()
+        prefix = raw_markdown[max(0, start_idx - 120) : start_idx].strip()
         last_prefix_line = prefix.split("\n")[-1].strip() if prefix else ""
         noise_keywords = ["gazette", "chapter", "section", "part"]
         if (
@@ -522,4 +520,3 @@ def validate_section(section: RawSection) -> bool:
     if not section.audience:
         return False
     return True
-

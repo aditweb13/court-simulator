@@ -8,3 +8,4 @@ describe("Courtroom Characters", () => {
     expect(CourtroomCharacters).toBeDefined();
   });
 });
+

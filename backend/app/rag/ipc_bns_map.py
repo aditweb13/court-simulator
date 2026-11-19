@@ -48,9 +48,7 @@ def load_concordance_map(
         return {}, {}
 
 
-def get_ipc_equivalent(
-    bns_section: str, map_path: Optional[Path] = None
-) -> Optional[str]:
+def get_ipc_equivalent(bns_section: str, map_path: Optional[Path] = None) -> Optional[str]:
     """Retrieve corresponding IPC section for a given BNS section number."""
     bns_to_ipc, _ = load_concordance_map(map_path)
     # Strip any sub-part references or parentheses, e.g. "103 (Part 1/2)" -> "103"
@@ -58,11 +56,8 @@ def get_ipc_equivalent(
     return bns_to_ipc.get(clean_sec)
 
 
-def get_bns_equivalent(
-    ipc_section: str, map_path: Optional[Path] = None
-) -> Optional[str]:
+def get_bns_equivalent(ipc_section: str, map_path: Optional[Path] = None) -> Optional[str]:
     """Retrieve corresponding BNS section for a given IPC section number."""
     _, ipc_to_bns = load_concordance_map(map_path)
     clean_sec = ipc_section.split()[0].split("(")[0].strip()
     return ipc_to_bns.get(clean_sec)
-

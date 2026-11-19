@@ -57,10 +57,7 @@ class ConnectionManager:
             logger.debug("No active WebSocket clients for trial %s to receive event", trial_id)
             return
 
-        payload_str = (
-            event.model_dump_json() if isinstance(event, BaseModel)
-            else json.dumps(event)
-        )
+        payload_str = event.model_dump_json() if isinstance(event, BaseModel) else json.dumps(event)
 
         dead_sockets: List[WebSocket] = []
         for ws in sockets:

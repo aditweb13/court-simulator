@@ -21,5 +21,3 @@ def event_loop_policy():
     if sys.platform == "win32":
         return asyncio.WindowsSelectorEventLoopPolicy()  # type: ignore[attr-defined]
     return asyncio.DefaultEventLoopPolicy()
-
-

@@ -75,4 +75,3 @@ def test_build_witness_memory_filters_unseen_events():
     assert "poison" not in prompt
     assert "Foyer" in prompt
     assert "Study" in prompt
-

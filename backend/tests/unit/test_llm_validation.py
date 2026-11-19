@@ -54,9 +54,7 @@ async def test_chat_json_validation_markdown_codeblock() -> None:
     groq_pool.add_key("gsk-test")
 
     md_payload = (
-        "```json\n"
-        '{"guilty": false, "confidence": 0.88, "reasoning": "Reasonable doubt."}\n'
-        "```"
+        '```json\n{"guilty": false, "confidence": 0.88, "reasoning": "Reasonable doubt."}\n```'
     )
     respx.post(get_provider_endpoint("groq")).mock(
         return_value=httpx.Response(
@@ -186,6 +184,4 @@ async def test_chat_json_all_providers_invalid_raises_llm_unavailable() -> None:
     )
 
     with pytest.raises(LLMUnavailable):
-        await chat(
-            "mid", [{"role": "user", "content": "Deliberate"}], response_model=SampleVerdict
-        )
+        await chat("mid", [{"role": "user", "content": "Deliberate"}], response_model=SampleVerdict)

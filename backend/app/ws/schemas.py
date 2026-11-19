@@ -83,9 +83,7 @@ class LineEvent(BaseModel):
     camera: Optional[str] = Field(
         default="wide", description="Directorial camera shot: wide, close, jury, judge, witness"
     )
-    audio_url: Optional[str] = Field(
-        default=None, description="Audio TTS streaming URL if enabled"
-    )
+    audio_url: Optional[str] = Field(default=None, description="Audio TTS streaming URL if enabled")
 
 
 class RulingEvent(BaseModel):

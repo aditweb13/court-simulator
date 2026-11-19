@@ -54,4 +54,3 @@ class TestGetReranker:
     def test_returns_fake_in_test_mode(self) -> None:
         reranker = get_reranker()
         assert isinstance(reranker, FakeReranker)
-

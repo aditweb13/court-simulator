@@ -108,3 +108,4 @@ export function Captions({ className }: CaptionsProps) {
     </div>
   );
 }
+

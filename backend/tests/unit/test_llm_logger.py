@@ -85,4 +85,3 @@ async def test_record_llm_call_session_error_handling() -> None:
 
     # Should gracefully catch error and return None without raising
     assert result is None
-

@@ -28,9 +28,7 @@ async def test_call_provider_success() -> None:
         return_value=httpx.Response(
             200,
             json={
-                "choices": [
-                    {"message": {"role": "assistant", "content": "Guilty as charged."}}
-                ],
+                "choices": [{"message": {"role": "assistant", "content": "Guilty as charged."}}],
                 "usage": {"prompt_tokens": 42, "completion_tokens": 15},
             },
         )
@@ -85,9 +83,7 @@ async def test_call_provider_openrouter_headers() -> None:
 @respx.mock
 async def test_call_provider_auth_error_401() -> None:
     endpoint = get_provider_endpoint("gemini")
-    respx.post(endpoint).mock(
-        return_value=httpx.Response(401, json={"error": "Invalid API key"})
-    )
+    respx.post(endpoint).mock(return_value=httpx.Response(401, json={"error": "Invalid API key"}))
 
     key = KeyState(alias="gemini#1", secret="bad-key", provider="gemini")
     resp = await call_provider(
@@ -106,9 +102,7 @@ async def test_call_provider_auth_error_401() -> None:
 @respx.mock
 async def test_call_provider_skip_provider_400_404_422() -> None:
     endpoint = get_provider_endpoint("groq")
-    respx.post(endpoint).mock(
-        return_value=httpx.Response(404, json={"error": "Model not found"})
-    )
+    respx.post(endpoint).mock(return_value=httpx.Response(404, json={"error": "Model not found"}))
 
     key = KeyState(alias="groq#1", secret="test", provider="groq")
     resp = await call_provider(
@@ -181,4 +175,3 @@ async def test_call_provider_transport_error() -> None:
 
     assert resp.outcome == AttemptOutcome.TIMEOUT
     assert "Transport error" in (resp.error_message or "")
-

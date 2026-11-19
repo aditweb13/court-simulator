@@ -92,6 +92,5 @@ def assert_case_valid(case: CaseSchema) -> None:
     errors = validate_case_integrity(case)
     if errors:
         raise CaseValidationError(
-            f"Case validation failed for '{case.slug}':\n"
-            + "\n".join(f"- {e}" for e in errors)
+            f"Case validation failed for '{case.slug}':\n" + "\n".join(f"- {e}" for e in errors)
         )

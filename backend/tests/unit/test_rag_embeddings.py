@@ -70,4 +70,3 @@ class TestGetEmbedder:
     def test_returns_fake_in_test_mode(self) -> None:
         embedder = get_embedder()
         assert isinstance(embedder, FakeEmbedder)
-

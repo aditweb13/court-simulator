@@ -160,13 +160,48 @@ async def _fetch_exact_candidates(
 # Words that occur in act names / boilerplate and pollute FTS ranking.
 # These are stripped from the user query *before* plainto_tsquery.
 _FTS_STOPWORDS = {
-    "bharatiya", "nyaya", "sanhita", "nagarik", "suraksha", "sakshya",
-    "adhiniyam", "constitution", "india", "indian",
-    "bns", "bnss", "bsa", "ipc", "crpc",
-    "under", "section", "article", "sec", "art",
-    "act", "code", "law", "provisions", "provision",
-    "what", "which", "how", "when", "where", "who", "does",
-    "the", "of", "is", "in", "for", "and", "or", "to", "a", "an",
+    "bharatiya",
+    "nyaya",
+    "sanhita",
+    "nagarik",
+    "suraksha",
+    "sakshya",
+    "adhiniyam",
+    "constitution",
+    "india",
+    "indian",
+    "bns",
+    "bnss",
+    "bsa",
+    "ipc",
+    "crpc",
+    "under",
+    "section",
+    "article",
+    "sec",
+    "art",
+    "act",
+    "code",
+    "law",
+    "provisions",
+    "provision",
+    "what",
+    "which",
+    "how",
+    "when",
+    "where",
+    "who",
+    "does",
+    "the",
+    "of",
+    "is",
+    "in",
+    "for",
+    "and",
+    "or",
+    "to",
+    "a",
+    "an",
 }
 
 
@@ -178,10 +213,31 @@ def _clean_fts_query(raw: str) -> str:
 
 
 _EXTRA_SEARCH_STOPWORDS = {
-    "definition", "punishment", "punished", "offence", "offences",
-    "what", "which", "how", "when", "where", "under", "act", "section",
-    "article", "provisions", "procedure", "cases", "case", "code", "law",
-    "res", "gestae", "remand", "dying", "declaration",
+    "definition",
+    "punishment",
+    "punished",
+    "offence",
+    "offences",
+    "what",
+    "which",
+    "how",
+    "when",
+    "where",
+    "under",
+    "act",
+    "section",
+    "article",
+    "provisions",
+    "procedure",
+    "cases",
+    "case",
+    "code",
+    "law",
+    "res",
+    "gestae",
+    "remand",
+    "dying",
+    "declaration",
 }
 
 
@@ -446,8 +502,7 @@ async def retrieve(
 
         # Step 5: Cross-encoder rerank
         passages = [
-            f"{c.act} Section {c.section_no}: {c.title}. {c.body}"
-            for c in top_20_candidates
+            f"{c.act} Section {c.section_no}: {c.title}. {c.body}" for c in top_20_candidates
         ]
         reranked_scores = rerank_engine.rerank(query, passages, prior_scores=rrf_scores)
 

@@ -92,3 +92,4 @@ export function getShotForSpeaker(
 
   return CAMERA_SHOTS[fallback];
 }
+

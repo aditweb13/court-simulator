@@ -155,4 +155,3 @@ def test_duplicate_witness_names_fails():
     assert any("Duplicate witness name" in e for e in errors)
     with pytest.raises(CaseValidationError):
         assert_case_valid(case)
-

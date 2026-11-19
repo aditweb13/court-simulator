@@ -5,6 +5,7 @@ Revises: 001_users
 Create Date: 2026-11-18
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -46,4 +47,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index("llm_calls_trial_idx", table_name="llm_calls")
     op.drop_table("llm_calls")
-

@@ -117,8 +117,5 @@ def get_embedder() -> BaseEmbedder:
     try:
         return BgeM3Embedder()
     except Exception as exc:
-        logger.warning(
-            "Could not load BgeM3Embedder (%s), falling back to FakeEmbedder", exc
-        )
+        logger.warning("Could not load BgeM3Embedder (%s), falling back to FakeEmbedder", exc)
         return FakeEmbedder()
-

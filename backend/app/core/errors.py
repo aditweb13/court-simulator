@@ -134,4 +134,3 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         content=envelope.model_dump(),
         headers={"X-Request-ID": req_id},
     )
-

@@ -32,3 +32,4 @@ describe("Camera Shots Director Presets", () => {
     expect(getShotForSpeaker("wide").name).toBe("wide");
   });
 });
+

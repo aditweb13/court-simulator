@@ -38,4 +38,3 @@ async def test_404_error_envelope():
         assert data["error"]["code"] == "NOT_FOUND"
         assert "request_id" in data["meta"]
         assert response.headers.get("X-Request-ID") == data["meta"]["request_id"]
-

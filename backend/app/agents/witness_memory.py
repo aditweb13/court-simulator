@@ -70,9 +70,7 @@ class WitnessMemory:
                     if item.other_actors
                     else ""
                 )
-                lines.append(
-                    f"- At {item.time} ({item.location}): {item.observation}{actors_str}"
-                )
+                lines.append(f"- At {item.time} ({item.location}): {item.observation}{actors_str}")
 
         if include_hides and self.hides:
             lines.append("\nSecrets you are trying to conceal (do not disclose unless cornered):")
@@ -211,7 +209,8 @@ def build_witness_memory(
 
         # Other actors excluding this witness
         other_actors = [
-            a for a in e_actors
+            a
+            for a in e_actors
             if a.lower() != w_name.lower() and not a.lower().endswith(w_name.lower())
         ]
 

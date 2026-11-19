@@ -7,6 +7,7 @@ import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from uuid import UUID
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     DateTime,
@@ -171,8 +172,34 @@ class Turn(Base):
 
     trial: Mapped[Trial] = relationship("Trial", back_populates="turns")
     agent: Mapped[Optional[Agent]] = relationship("Agent", back_populates="turns")
+    embedding_record: Mapped[Optional[TurnEmbedding]] = relationship(
+        "TurnEmbedding",
+        back_populates="turn",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (
         UniqueConstraint("trial_id", "seq", name="uq_turns_trial_id_seq"),
         Index("turns_trial_idx", "trial_id"),
     )
+
+
+class TurnEmbedding(Base):
+    __tablename__ = "turn_embeddings"
+
+    turn_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("turns.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    trial_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("trials.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    embedding: Mapped[List[float]] = mapped_column(Vector(1024), nullable=False)
+
+    turn: Mapped[Turn] = relationship("Turn", back_populates="embedding_record")
+
+    __table_args__ = (Index("turn_emb_trial_idx", "trial_id"),)

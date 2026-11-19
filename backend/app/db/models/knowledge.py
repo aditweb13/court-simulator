@@ -66,4 +66,3 @@ class KnowledgeChunk(Base):
         Index("kc_lookup", "act", "section_no"),
         Index("kc_domain", "domain"),
     )
-

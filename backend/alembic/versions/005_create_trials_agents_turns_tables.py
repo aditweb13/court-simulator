@@ -5,6 +5,7 @@ Revises: 004_cases_evidence_witnesses
 Create Date: 2026-11-19
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa

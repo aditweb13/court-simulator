@@ -84,9 +84,7 @@ async def test_chat_failover_to_next_provider() -> None:
         return_value=httpx.Response(
             200,
             json={
-                "choices": [
-                    {"message": {"role": "assistant", "content": "Overruled."}}
-                ],
+                "choices": [{"message": {"role": "assistant", "content": "Overruled."}}],
                 "usage": {"prompt_tokens": 15, "completion_tokens": 4},
             },
         )
@@ -111,4 +109,3 @@ async def test_chat_all_providers_fail_raises_llm_unavailable() -> None:
 
     assert exc_info.value.code.value == "LLM_UNAVAILABLE"
     assert exc_info.value.status_code == 503
-

@@ -192,10 +192,7 @@ async def create_trial(
     req_id = get_request_id(request)
 
     # 1. Look up Case
-    stmt = (
-        select(Case)
-        .options(selectinload(Case.witnesses))
-    )
+    stmt = select(Case).options(selectinload(Case.witnesses))
     try:
         parsed_uuid = uuid.UUID(body.case_id)
         stmt = stmt.where(Case.id == parsed_uuid)

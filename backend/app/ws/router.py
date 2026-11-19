@@ -122,9 +122,7 @@ async def trial_websocket_endpoint(websocket: WebSocket, trial_id: UUID) -> None
                     obj_event = ObjectEvent.model_validate(data)
                     logger.info("Objection on trial %s: %s", trial_id, obj_event.objection_type)
                 else:
-                    logger.debug(
-                        "Unhandled event '%s' on trial %s", msg_type, trial_id
-                    )
+                    logger.debug("Unhandled event '%s' on trial %s", msg_type, trial_id)
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.warning("Malformed client message on trial %s: %s", trial_id, e)
     except WebSocketDisconnect:

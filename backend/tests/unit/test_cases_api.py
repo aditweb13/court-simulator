@@ -100,4 +100,3 @@ async def test_get_case_not_found():
         assert "error" in body
         assert body["error"]["code"] == "NOT_FOUND"
         assert "not found" in body["error"]["message"].lower()
-

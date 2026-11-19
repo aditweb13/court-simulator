@@ -177,3 +177,4 @@ export function TrialControls({ className }: TrialControlsProps) {
     </div>
   );
 }
+

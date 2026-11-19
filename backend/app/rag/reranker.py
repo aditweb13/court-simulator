@@ -31,10 +31,41 @@ class BaseReranker(Protocol):
 
 
 _RERANKER_STOPWORDS = {
-    "a", "an", "the", "is", "in", "for", "and", "or", "to", "of",
-    "what", "which", "how", "when", "where", "who", "whom", "whose",
-    "does", "do", "did", "under", "by", "from", "with", "as", "at",
-    "be", "been", "being", "have", "has", "had", "case", "cases",
+    "a",
+    "an",
+    "the",
+    "is",
+    "in",
+    "for",
+    "and",
+    "or",
+    "to",
+    "of",
+    "what",
+    "which",
+    "how",
+    "when",
+    "where",
+    "who",
+    "whom",
+    "whose",
+    "does",
+    "do",
+    "did",
+    "under",
+    "by",
+    "from",
+    "with",
+    "as",
+    "at",
+    "be",
+    "been",
+    "being",
+    "have",
+    "has",
+    "had",
+    "case",
+    "cases",
 }
 
 
@@ -145,8 +176,5 @@ def get_reranker() -> BaseReranker:
     try:
         return BgeRerankerV2M3()
     except Exception as exc:
-        logger.warning(
-            "Could not load BgeRerankerV2M3 (%s), falling back to FakeReranker", exc
-        )
+        logger.warning("Could not load BgeRerankerV2M3 (%s), falling back to FakeReranker", exc)
         return FakeReranker()
-

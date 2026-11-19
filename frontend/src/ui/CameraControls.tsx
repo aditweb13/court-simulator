@@ -54,3 +54,4 @@ export function CameraControls({ className }: CameraControlsProps) {
     </div>
   );
 }
+

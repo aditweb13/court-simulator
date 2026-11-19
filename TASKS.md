@@ -51,14 +51,14 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P5] Event player and queue on the client, with ack sending
 - [x] [P5] Camera director with wide, close and jury shots, and captions overlay
 - [x] [P5] Minimal frontend trial setup: case list, Start button, and trial screen
-- [ ] [P6] Prosecutor and defense agents with adversarial prompts and private notes
-- [ ] [P6] Witness and defendant agents using their knowledge slices
-- [ ] [P6] Rules engine: turn order, objection quota, admissibility, with tests
-- [ ] [P6] Objection and ruling flow in the graph
-- [ ] [P6] `turn_embeddings` migration and embedding of each new turn
-- [ ] [P6] Mark struck turns on sustained objections
-- [ ] [P6] Witness examination loop (direct, cross, redirect)
-- [ ] [P6] Isolation test suite for witnesses, lawyers and the record
+- [x] [P6] Prosecutor and defense agents with adversarial prompts and private notes
+- [x] [P6] Witness and defendant agents using their knowledge slices
+- [x] [P6] Rules engine: turn order, objection quota, admissibility, with tests
+- [x] [P6] Objection and ruling flow in the graph
+- [x] [P6] `turn_embeddings` migration and embedding of each new turn
+- [x] [P6] Mark struck turns on sustained objections
+- [x] [P6] Witness examination loop (direct, cross, redirect)
+- [x] [P6] Isolation test suite for witnesses, lawyers and the record
 - [ ] [P7] Juror personas and the step-by-step reasoning prompt
 - [ ] [P7] Juror retrieval limited to admitted, non-struck turns, plus its isolation test
 - [ ] [P7] Deliberation rounds with a devil's advocate, run in parallel

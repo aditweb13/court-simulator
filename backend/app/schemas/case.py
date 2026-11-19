@@ -139,4 +139,3 @@ class CaseDetail(BaseModel):
 def get_case_json_schema() -> Dict[str, Any]:
     """Return the raw JSON Schema dictionary for Case validation."""
     return CaseSchema.model_json_schema()
-

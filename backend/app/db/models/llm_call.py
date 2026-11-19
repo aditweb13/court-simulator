@@ -34,4 +34,3 @@ class LLMCall(Base):
     )
 
     __table_args__ = (Index("llm_calls_trial_idx", "trial_id"),)
-

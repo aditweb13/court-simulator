@@ -20,4 +20,3 @@ async def get_health(request: Request) -> SuccessResponse[HealthData]:
         data=HealthData(status="ok"),
         meta=Meta(request_id=req_id),
     )
-

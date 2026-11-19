@@ -20,3 +20,4 @@ export function usePrefersReducedMotion(): boolean {
 
   return reducedMotion;
 }
+

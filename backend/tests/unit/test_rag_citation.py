@@ -8,9 +8,7 @@ from app.rag.citation import extract_cited_provisions, verify_citations
 from app.rag.retriever import RetrievedChunk
 
 
-def _make_chunk(
-    act: str, section_no: str, ipc_eq: str | None = None
-) -> RetrievedChunk:
+def _make_chunk(act: str, section_no: str, ipc_eq: str | None = None) -> RetrievedChunk:
     return RetrievedChunk(
         id=uuid4(),
         act=act,
@@ -109,4 +107,3 @@ class TestVerifyCitations:
         valid, violations = verify_citations(text, chunks)
         # IPC 302 resolves to BNS 103 which is in chunks
         assert valid is True
-

@@ -18,6 +18,7 @@ from app.db.session import async_session_maker
 from app.main import app
 from app.orchestrator.graph import (
     _route_after_closings,
+    _route_after_examination,
     _route_after_openings,
     _route_after_setup,
     build_courtroom_graph,
@@ -27,8 +28,11 @@ from app.orchestrator.nodes import closings_node, openings_node, setup_node
 from app.orchestrator.schemas import (
     ClerkAnnouncementOutput,
     ClosingArgumentOutput,
+    ExaminationQuestionOutput,
     JudgeClosingOutput,
     JudgeOpeningOutput,
+    ObjectionOutput,
+    WitnessAnswerOutput,
 )
 from app.orchestrator.state import CourtroomState, TrialPhase
 
@@ -53,6 +57,7 @@ def test_graph_structure():
     # Verify graph contains our nodes
     assert "setup" in graph.nodes
     assert "openings" in graph.nodes
+    assert "examination" in graph.nodes
     assert "closings" in graph.nodes
 
 
@@ -80,9 +85,14 @@ def test_conditional_routing() -> None:
     assert _route_after_setup(paused_state) == "__end__"
 
     # openings routing
-    assert _route_after_openings(normal_state) == "closings"
+    assert _route_after_openings(normal_state) == "examination"
     assert _route_after_openings(error_state) == "__end__"
     assert _route_after_openings(paused_state) == "__end__"
+
+    # examination routing
+    assert _route_after_examination(normal_state) == "closings"
+    assert _route_after_examination(error_state) == "__end__"
+    assert _route_after_examination(paused_state) == "__end__"
 
     # closings routing
     assert _route_after_closings(normal_state) == "__end__"
@@ -184,7 +194,7 @@ async def test_openings_node_turn_generation(seeded_trial):
 
             assert result_state["turn_seq"] == 2
             assert len(result_state["turns"]) == 2
-            assert result_state["current_phase"] == TrialPhase.CLOSINGS.value
+            assert result_state["current_phase"] == TrialPhase.EXAMINATION.value
             assert result_state["active_speaker"] == "clerk"
 
             # Check turns in database
@@ -275,6 +285,12 @@ async def test_full_run_trial(seeded_trial):
             return JudgeOpeningOutput(text="Judge opening statement.")
         elif response_model is ClerkAnnouncementOutput:
             return ClerkAnnouncementOutput(text="Clerk reading charges.")
+        elif response_model is ExaminationQuestionOutput:
+            return ExaminationQuestionOutput(text="Did you see the accused at the scene?")
+        elif response_model is WitnessAnswerOutput:
+            return WitnessAnswerOutput(text="Yes, I saw him near the entrance.")
+        elif response_model is ObjectionOutput:
+            return ObjectionOutput(raise_objection=False)
         elif response_model is ClosingArgumentOutput:
             return ClosingArgumentOutput(text="Counsel closing argument.")
         elif response_model is JudgeClosingOutput:
@@ -287,13 +303,25 @@ async def test_full_run_trial(seeded_trial):
 
             assert final_state["current_phase"] == TrialPhase.FINISHED.value
             assert final_state["error"] is None
-            assert len(final_state["turns"]) == 5
-            assert final_state["turn_seq"] == 5
+            assert len(final_state["turns"]) == 11
+            assert final_state["turn_seq"] == 11
 
             # Verify turns stored in database
             stmt = select(Turn).where(Turn.trial_id == trial_id).order_by(Turn.seq)
             turns_res = await db.execute(stmt)
             turns = turns_res.scalars().all()
-            assert len(turns) == 5
+            assert len(turns) == 11
             roles = [t.speaker_role for t in turns]
-            assert roles == ["judge", "clerk", "prosecutor", "defense", "judge"]
+            assert roles == [
+                "judge",
+                "clerk",
+                "prosecutor",
+                "witness",
+                "defense",
+                "witness",
+                "prosecutor",
+                "witness",
+                "prosecutor",
+                "defense",
+                "judge",
+            ]

@@ -47,4 +47,3 @@ def test_knowledge_chunk_indexes_definition() -> None:
     # Check GIN index
     tsv_idx = next(idx for idx in table.indexes if idx.name == "kc_tsv")
     assert tsv_idx.dialect_options["postgresql"]["using"] == "gin"
-

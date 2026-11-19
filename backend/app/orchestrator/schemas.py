@@ -46,6 +46,71 @@ class JudgeClosingOutput(BaseModel):
     camera: str = Field(default="judge", description="Camera shot")
 
 
+class ExaminationQuestionOutput(BaseModel):
+    """Structured output from a lawyer asking a witness a question."""
+
+    text: str = Field(description="The spoken question directed to the witness in the stand")
+    action: str = Field(default="stand", description="Physical animation: stand, point, talk")
+    emotion: str = Field(
+        default="probing",
+        description="Facial expression: firm, probing, skeptical, calm",
+    )
+    camera: str = Field(
+        default="prosecution",
+        description="Camera angle: prosecution, defense, witness",
+    )
+    private_note: Optional[str] = Field(
+        default=None, description="Tactical reason or strategy note behind this question"
+    )
+
+
+class WitnessAnswerOutput(BaseModel):
+    """Structured output from a witness answering a question from their recollection."""
+
+    text: str = Field(description="The witness's spoken answer from their personal knowledge")
+    action: str = Field(default="talk", description="Physical animation: sit, talk")
+    emotion: str = Field(default="neutral", description="Emotion: neutral, anxious, firm, hesitant")
+    camera: str = Field(default="witness", description="Camera angle: witness")
+
+
+class ObjectionOutput(BaseModel):
+    """Structured output when an opposing lawyer considers raising an objection."""
+
+    raise_objection: bool = Field(
+        description="Whether to formally raise an objection to the preceding question or answer"
+    )
+    objection_type: Optional[str] = Field(
+        default=None,
+        description="Ground: hearsay, leading, relevance, badgering, speculation, character",
+    )
+    legal_basis: Optional[str] = Field(
+        default=None,
+        description="Statutory reference under BSA 2023 (e.g. BSA Section 55)",
+    )
+    argument: Optional[str] = Field(
+        default=None,
+        description="Oral statement to the court, e.g. 'Objection, this calls for hearsay.'",
+    )
+    action: str = Field(default="stand", description="Physical animation state: stand, point")
+    camera: str = Field(default="defense", description="Camera angle: prosecution, defense")
+
+
+class RulingOutput(BaseModel):
+    """Structured output from the judge ruling on an objection."""
+
+    ruling: str = Field(description="Judicial decision: sustained or overruled")
+    struck: bool = Field(
+        default=False,
+        description="Whether testimony should be struck from the court record",
+    )
+    reason: str = Field(description="Judge's stated oral legal justification")
+    text: str = Field(
+        description="Spoken statement to the court, e.g. 'Sustained. Counsel will rephrase.'"
+    )
+    action: str = Field(default="gavel", description="Physical animation state: gavel, talk, sit")
+    camera: str = Field(default="judge", description="Camera angle: judge")
+
+
 class TurnOutput(BaseModel):
     """Generic wrapper for a generated courtroom turn."""
 

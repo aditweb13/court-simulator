@@ -155,7 +155,6 @@ def test_split_long_section_at_subsections() -> None:
         assert f"Part {i + 1}/" in piece.section_no
         assert "Punishment for murder" in piece.title
 
-
     # Too short body
     too_short = RawSection(act="BSA", section_no="3", title="Evidence", body="Short")
     assert validate_section(too_short) is False

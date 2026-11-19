@@ -4,46 +4,54 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 5: Gateway, orchestrator, live judge in 3D (COMPLETED) -> Phase 6: Lawyers, witnesses, objections, and the record (NEXT)
+Phase 6: Lawyers, witnesses, objections, and the record (COMPLETED) -> Phase 7: Jurors and deliberation (NEXT)
 
 ## Active Goal
 
-Phase 5 Definition of Done achieved:
-Starting a trial in the browser plays a live LLM-generated opening from the judge in the 3D scene, in order, with captions, and the server waits for each ack.
+Phase 6 Definition of Done achieved:
+A full examination of one witness runs with at least one objection ruled on, the struck testimony is flagged, and the isolation tests pass.
 
-Ready to begin Phase 6 tasks:
-1. Prosecutor and defense agents with adversarial prompts and private notes
-2. Witness and defendant agents using their knowledge slices
-3. Rules engine: turn order, objection quota, admissibility, with tests
-4. Objection and ruling flow in the graph
-5. `turn_embeddings` migration and embedding of each new turn
-6. Mark struck turns on sustained objections
-7. Witness examination loop (direct, cross, redirect)
+Ready to begin Phase 7 tasks:
+1. Juror personas and the step-by-step reasoning prompt
+2. Juror retrieval limited to admitted, non-struck turns, plus its isolation test
+3. Deliberation rounds with a devil's advocate, run in parallel
+4. Private pre- and post-deliberation votes
+5. Verdict aggregation (unanimous / majority / hung)
+6. Bench of 3 verdict judges for non-jury trials (judicial mode)
+7. Sentences scaled to statutory ranges under BNS
 
 ## Last Completed
 
-Phase 5 (Gateway, Orchestrator, and Live Judge in 3D):
-- Database migrations & models for `trials`, `agents`, `turns` with foreign key relations.
-- REST endpoints `POST /trials` and `GET /trials/{id}` with agent seeding (Judge, Clerk, Prosecutor, Defense, Accused, Witnesses, 7 Jurors, 3 Verdict Judges).
-- WebSocket endpoint `/ws/v1/trials/{trial_id}` with 5-second auth handshake, event schemas (`line`, `ruling`, `state`, `prompt`, `verdict`, `error`), and connection manager.
-- Orchestrator skeleton with LangGraph (`StateGraph`, `CourtroomState`, `setup_node`, `openings_node`, `closings_node`).
-- Context filters and prompt builders (`build_judge_context()`, `build_clerk_context()`) enforcing strict information isolation (judge never sees case truth, clerk has minimal docket data).
-- Send-then-wait-for-ack loop with timeout (`ack_timeout_seconds=10.0`), auto-pause on dead client, and fast-path ack dictionary to prevent race conditions.
-- React Three Fiber 3D Courtroom Scene: Dais, Judge's bench, gavel, clerk desk, witness stand, counsel tables (prosecution/defense styling), 7-seat tiered jury box, spectator gallery pews, warm illumination and architectural walls.
-- Stylized placeholder humanoid characters (`Character.tsx`, `CourtroomCharacters.tsx`) supporting `sit`, `stand`, `talk`, and `point` states, plus judicial and advocate robes and legal neck tabs.
-- Camera Director (`CameraDirector.tsx`, `shots.ts`) with shot presets (`wide`, `judge`, `witness`, `prosecution`, `defense`, `jury`, `clerk`), smooth lerping, and instant cut behavior on `prefers-reduced-motion`.
-- Event player and queue (`trialWs.ts`, `schemas.ts`, `trialStore.ts`) with dynamic character-count reading pace, auto-ack dispatch, and manual turn advance.
-- Full courtroom UI: `Captions.tsx`, `CameraControls.tsx`, `Transcript.tsx`, `TrialControls.tsx`, and responsive 12-column layout in `App.tsx`.
-- 100% tests passing (15 Python unit tests, 12 Vitest frontend tests), ruff, mypy, tsc, and eslint all completely clean.
+Phase 6 (Lawyers, Witnesses, Objections, and the Record):
+- Adversarial context builders with strict information isolation:
+  - `build_prosecutor_context()`, `build_prosecutor_examination_prompt()`, `build_prosecutor_objection_prompt()`, `build_prosecutor_closing_prompt()`
+  - `build_defense_context()`, `build_defense_examination_prompt()`, `build_defense_objection_prompt()`, `build_defense_closing_prompt()`
+  - `build_witness_context()`, `build_witness_answer_prompt()` (strict memory slice isolation)
+  - `build_defendant_context()`, `build_defendant_answer_prompt()`
+- Pure statutory rules engine (`backend/app/rules/`):
+  - `objections.py`: VALID_OBJECTION_GROUNDS, statutory citations (hearsay BSA 55, leading BSA 146, relevance BSA 3-14, badgering BSA 154, speculation BSA 39, character BSA 50-52), `check_objection_quota()`, `is_leading_question_permitted()`.
+  - `turn_order.py`: `get_examining_lawyer()`, `get_opposing_party()`, `get_next_examination_stage()`, `ExaminationStage`.
+  - `admissibility.py`: `evaluate_evidence_admissibility()` (electronic records BSA 63 certificate, police confessions BSA 23, secondary evidence BSA 60).
+- Examination Node in LangGraph orchestrator (`examination_node()`):
+  - Direct examination (prosecutor asks, defense evaluates objection, judge rules, witness answers).
+  - Cross-examination (defense asks, prosecutor evaluates objection, judge rules on BSA 146(3) leading question allowance, witness answers).
+  - Redirect examination (prosecutor asks, defense evaluates objection, judge rules on BSA 146(1) leading question ban, witness answers).
+  - Sustained objections trigger `mark_turn_struck()`, flagging testimony as struck (`struck = True`) in the database.
+- Migration `006_create_turn_embeddings_table.py` and `TurnEmbedding` ORM model:
+  - Each turn is embedded via `get_embedder()` and stored in `turn_embeddings` with 1024-dim Vector, trial_id index, and HNSW cosine index.
+- 100% test coverage:
+  - 180 Python tests passing (unit tests for rules, context isolation, examination flow, sustained/overruled rulings, struck testimony flag).
+  - 12 Vitest frontend tests passing.
+  - `ruff check`, `ruff format`, `mypy` all completely clean (0 errors across 22 source files).
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
-2026-11-19 · Implemented full Phase 5 frontend (characters, camera director, event player, captions, transcript, controls) and integrated WebSocket auto-start for orchestrator · Satisfies Phase 5 Definition of Done.
-2026-11-19 · Added send-then-wait-for-ack loop with ack timeout (10s) and fast-path resolution in ConnectionManager · Ensures server pauses when client drops and prevents turn racing.
-2026-11-19 · Implemented context isolation for Judge and Clerk: judge gets public case facts, admitted evidence, and statutory chunks only; clerk gets minimal case docket data · Prevents hallucinated bias and truth leakage.
-2026-11-19 · Built LangGraph orchestrator state graph (setup -> openings -> closings) with Pydantic structured output models and chat() routing · Establishes deterministic trial flow.
+2026-11-19 · Implemented complete adversarial examination node with direct, cross, and redirect loops, objection quotas, and struck testimony marking · Satisfies Phase 6 Definition of Done.
+2026-11-19 · Enforced Bharatiya Sakshya Adhiniyam, 2023 (BSA Section 146) leading question rules: sustained in direct/redirect, permitted in cross-examination · Adheres to Indian statutory courtroom procedure.
+2026-11-19 · Created turn_embeddings table (migration 006) and persisted embeddings inline during _persist_turn · Enables clean downstream semantic retrieval for jurors in Phase 7.
+2026-11-19 · Implemented pure rules engine functions in app.rules without DB or LLM dependencies · Strictly aligns with Rules.md architecture constraints.
 
 ## Next Step
 
