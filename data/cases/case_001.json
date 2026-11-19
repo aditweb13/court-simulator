@@ -1,0 +1,146 @@
+{
+  "slug": "state-v-malhotra-2024",
+  "title": "State of Maharashtra v. Vikram Malhotra",
+  "jurisdiction": "IN",
+  "charge": "Murder under Section 103(1) of Bharatiya Nyaya Sanhita, 2023",
+  "difficulty": 2,
+  "source": "handwritten",
+  "truth": {
+    "culprit": "Vikram Malhotra",
+    "motive": "Financial dispute over control of Malhotra Logistics and ancestral property valued at ₹50 Crore",
+    "summary": "On 14 August 2024, Vikram Malhotra secretly administered potassium cyanide into Anand Malhotra's evening scotch at Sea Breeze Villa in Bandra. The death was initially portrayed as acute cardiac arrest, but toxicological analysis confirmed lethal cyanide poisoning.",
+    "timeline": [
+      {
+        "id": 0,
+        "time": "2024-08-14 18:30",
+        "description": "Anand Malhotra returned to Sea Breeze Villa and instructed housekeeper Sunita Bai to prepare his private study for evening work.",
+        "location": "Sea Breeze Villa, Bandra, Mumbai",
+        "actors": ["Anand Malhotra", "Sunita Bai"]
+      },
+      {
+        "id": 1,
+        "time": "2024-08-14 19:45",
+        "description": "Vikram Malhotra arrived at the villa carrying a leather attaché case containing potassium cyanide procured from an industrial dye workshop in Kurla.",
+        "location": "Villa Foyer",
+        "actors": ["Vikram Malhotra", "Sunita Bai"]
+      },
+      {
+        "id": 2,
+        "time": "2024-08-14 20:15",
+        "description": "Vikram Malhotra entered Anand's private study, poured scotch from the decanter, and dissolved the cyanide into Anand's glass while Anand took an urgent business call by the balcony.",
+        "location": "Private Study",
+        "actors": ["Vikram Malhotra", "Anand Malhotra"]
+      },
+      {
+        "id": 3,
+        "time": "2024-08-14 20:30",
+        "description": "Anand Malhotra drank the poisoned scotch, experienced violent convulsions and respiratory failure, and collapsed onto the study rug.",
+        "location": "Private Study",
+        "actors": ["Anand Malhotra", "Vikram Malhotra"]
+      },
+      {
+        "id": 4,
+        "time": "2024-08-14 20:45",
+        "description": "Vikram Malhotra wiped the tumbler rims with his silk handkerchief, restored the decanter to the bar cabinet, took Anand's phone to simulate an unread message, and exited through the rear garden gate.",
+        "location": "Villa Study and Garden",
+        "actors": ["Vikram Malhotra"]
+      },
+      {
+        "id": 5,
+        "time": "2024-08-14 21:15",
+        "description": "Sunita Bai entered the study to collect the beverage tray, found Anand Malhotra unresponsive on the floor, and alerted neighbours and emergency services.",
+        "location": "Private Study",
+        "actors": ["Sunita Bai"]
+      },
+      {
+        "id": 6,
+        "time": "2024-08-14 21:45",
+        "description": "Inspector Ramesh Shinde arrived with the local police team, cordoned off the study, and seized the drinking glasses and scotch decanter.",
+        "location": "Private Study",
+        "actors": ["Inspector Ramesh Shinde", "Sunita Bai"]
+      },
+      {
+        "id": 7,
+        "time": "2024-08-15 09:30",
+        "description": "Dr. K. S. Murthy performed the post-mortem autopsy at Cooper Hospital, noting characteristic bitter almond odor, venous blood congestion, and gastric mucosal erosion indicating cyanide toxicity.",
+        "location": "Mortuary, Cooper Hospital, Mumbai",
+        "actors": ["Dr. K. S. Murthy"]
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "exhibit_no": "Ex. P-1",
+      "type": "forensic",
+      "description": "Post-mortem and viscera toxicology report from State Forensic Science Laboratory, Kalina, certifying lethal potassium cyanide concentration in the deceased's stomach contents and blood.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-2",
+      "type": "physical",
+      "description": "Crystal tumbler seized from the study desk, yielding positive chemical identification of potassium cyanide residue and partial latent smudges.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-3",
+      "type": "documentary",
+      "description": "Call Detail Records (CDR) and cell site triangulation of Vikram Malhotra's mobile phone showing presence in Bandra West near the crime scene between 19:40 and 20:50 on 14 August 2024, supported by Section 63 BSA electronic certificate.",
+      "admissible": true
+    },
+    {
+      "exhibit_no": "Ex. P-4",
+      "type": "documentary",
+      "description": "Uncertified printouts of purported WhatsApp conversations between Vikram Malhotra and an overseas chemical vendor, without the requisite statutory certificate.",
+      "admissible": false,
+      "reason_inadmissible": "Electronic record produced without the mandatory statutory certificate required under Section 63 of Bharatiya Sakshya Adhiniyam, 2023."
+    },
+    {
+      "exhibit_no": "Ex. D-1",
+      "type": "documentary",
+      "description": "Guest entry log and valet slip from Grand Hyatt, Santacruz, showing Vikram Malhotra checked into the hotel conference lounge at 21:10 on 14 August 2024.",
+      "admissible": true
+    }
+  ],
+  "witnesses": [
+    {
+      "name": "Sunita Bai",
+      "saw_event_ids": [0, 1, 5, 6],
+      "reliability": 0.85,
+      "hides": [
+        "I stole ₹10,000 cash from the study desk drawer before raising the alarm and calling the police."
+      ],
+      "persona": {
+        "occupation": "Housekeeper",
+        "age": 48,
+        "tone": "Anxious, devout, deeply respectful of the deceased",
+        "background": "Employed at Sea Breeze Villa for eight years as a domestic worker."
+      }
+    },
+    {
+      "name": "Inspector Ramesh Shinde",
+      "saw_event_ids": [6],
+      "reliability": 0.9,
+      "hides": [
+        "The crime scene study was left unattended for 20 minutes before the forensic photographer arrived."
+      ],
+      "persona": {
+        "occupation": "Police Inspector, Bandra Police Station",
+        "age": 42,
+        "tone": "Formal, procedural, defensive of departmental protocol",
+        "background": "Lead investigating officer with 15 years in Mumbai Police."
+      }
+    },
+    {
+      "name": "Dr. K. S. Murthy",
+      "saw_event_ids": [7],
+      "reliability": 0.95,
+      "hides": [],
+      "persona": {
+        "occupation": "Chief Medical Officer and Forensic Pathologist",
+        "age": 55,
+        "tone": "Clinical, precise, detached, strictly empirical",
+        "background": "Senior autopsy surgeon at Cooper Hospital with extensive courtroom witness experience."
+      }
+    }
+  ]
+}

@@ -35,7 +35,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P3] Hybrid retrieval function with `audience` and `domain` filters
 - [x] [P3] Citation checker that rejects sections not in the retrieved chunks
 - [x] [P3] Retrieval test set (50 questions) and an accuracy script
-- [ ] [P4] Write hand-made case 1 and the loader script
+- [x] [P4] Write hand-made case 1 and the loader script
 - [ ] [P4] Write hand-made cases 2 and 3
 - [ ] [P4] `GET /cases` and `GET /cases/{id}` endpoints
 - [ ] [P4] Witness memory builder from `saw_event_ids` and its isolation test
