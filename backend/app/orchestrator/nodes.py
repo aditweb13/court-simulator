@@ -19,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.context.clerk import build_clerk_context, build_clerk_opening_prompt
 from app.context.judge import (
     build_judge_closing_prompt,
@@ -125,6 +126,64 @@ async def _update_trial_state(
     if trial:
         trial.state = new_state
         await db.flush()
+
+
+async def _send_and_wait_ack(
+    trial_id: UUID,
+    seq: int,
+    speaker: str,
+    text: str,
+    action: Optional[str] = None,
+    emotion: Optional[str] = None,
+    camera: Optional[str] = "wide",
+    timeout: Optional[float] = None,
+) -> bool:
+    """Send a line event and await client acknowledgment if connected.
+
+    Returns True if ack was received or no client is connected (headless mode).
+    Returns False if client timed out or died.
+    """
+    await _send_line(
+        trial_id=trial_id,
+        seq=seq,
+        speaker=speaker,
+        text=text,
+        action=action,
+        emotion=emotion,
+        camera=camera,
+    )
+
+    if not ws_manager.is_connected(trial_id):
+        return True
+
+    ack_timeout = timeout if timeout is not None else settings.ack_timeout_seconds
+    ack_received = await ws_manager.wait_for_ack(trial_id, seq, timeout=ack_timeout)
+    if not ack_received:
+        logger.warning(
+            "Trial %s: client ack timeout (%.1fs) on seq %d. Pausing trial.",
+            trial_id,
+            ack_timeout,
+            seq,
+        )
+        return False
+    return True
+
+
+async def _pause_trial(
+    db: AsyncSession,
+    state: CourtroomState,
+    trial_id: UUID,
+) -> CourtroomState:
+    """Transition trial to PAUSED state on dead client or ack timeout."""
+    previous = state["current_phase"]
+    await _update_trial_state(db, trial_id, "PAUSED")
+    await _send_state(trial_id, "PAUSED", previous)
+    await db.commit()
+    return {
+        **state,
+        "is_paused": True,
+        "previous_phase": previous,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +298,7 @@ async def openings_node(
         emotion=judge_output.emotion,
         camera=judge_output.camera,
     )
-    await _send_line(
+    ack_ok = await _send_and_wait_ack(
         trial_id=trial_id,
         seq=seq,
         speaker="judge",
@@ -250,6 +309,13 @@ async def openings_node(
     )
     turns_generated.append({"seq": seq, "speaker": "judge", "text": judge_output.text})
     seq += 1
+
+    if not ack_ok:
+        return await _pause_trial(
+            db,
+            {**state, "turns": turns_generated, "turn_seq": seq},
+            trial_id,
+        )
 
     # --- 2. Clerk reads charges ---
     clerk_context = await build_clerk_context(db, trial_id, case_id)
@@ -278,7 +344,7 @@ async def openings_node(
         emotion=clerk_output.emotion,
         camera=clerk_output.camera,
     )
-    await _send_line(
+    clerk_ack_ok = await _send_and_wait_ack(
         trial_id=trial_id,
         seq=seq,
         speaker="clerk",
@@ -289,6 +355,13 @@ async def openings_node(
     )
     turns_generated.append({"seq": seq, "speaker": "clerk", "text": clerk_output.text})
     seq += 1
+
+    if not clerk_ack_ok:
+        return await _pause_trial(
+            db,
+            {**state, "turns": turns_generated, "turn_seq": seq},
+            trial_id,
+        )
 
     await db.commit()
 
@@ -390,7 +463,7 @@ async def closings_node(
         emotion=prosecution_output.emotion,
         camera=prosecution_output.camera,
     )
-    await _send_line(
+    pros_ack_ok = await _send_and_wait_ack(
         trial_id=trial_id,
         seq=seq,
         speaker="prosecutor",
@@ -401,6 +474,13 @@ async def closings_node(
     )
     turns_generated.append({"seq": seq, "speaker": "prosecutor", "text": prosecution_output.text})
     seq += 1
+
+    if not pros_ack_ok:
+        return await _pause_trial(
+            db,
+            {**state, "turns": turns_generated, "turn_seq": seq},
+            trial_id,
+        )
 
     # --- 2. Defense closing ---
     defense_messages = [
@@ -440,7 +520,7 @@ async def closings_node(
         emotion=defense_output.emotion,
         camera=defense_output.camera,
     )
-    await _send_line(
+    def_ack_ok = await _send_and_wait_ack(
         trial_id=trial_id,
         seq=seq,
         speaker="defense",
@@ -451,6 +531,13 @@ async def closings_node(
     )
     turns_generated.append({"seq": seq, "speaker": "defense", "text": defense_output.text})
     seq += 1
+
+    if not def_ack_ok:
+        return await _pause_trial(
+            db,
+            {**state, "turns": turns_generated, "turn_seq": seq},
+            trial_id,
+        )
 
     # --- 3. Judge closing summary ---
     judge_context = await build_judge_context(db, trial_id, case_id)
@@ -478,7 +565,7 @@ async def closings_node(
         emotion=judge_close_output.emotion,
         camera=judge_close_output.camera,
     )
-    await _send_line(
+    judge_ack_ok = await _send_and_wait_ack(
         trial_id=trial_id,
         seq=seq,
         speaker="judge",
@@ -489,6 +576,13 @@ async def closings_node(
     )
     turns_generated.append({"seq": seq, "speaker": "judge", "text": judge_close_output.text})
     seq += 1
+
+    if not judge_ack_ok:
+        return await _pause_trial(
+            db,
+            {**state, "turns": turns_generated, "turn_seq": seq},
+            trial_id,
+        )
 
     await db.commit()
 

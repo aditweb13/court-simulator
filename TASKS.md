@@ -45,7 +45,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P5] WebSocket endpoint, auth handshake and event schemas
 - [x] [P5] Orchestrator skeleton with LangGraph (setup, openings, closings)
 - [x] [P5] Context filter and prompt for the judge and the clerk
-- [ ] [P5] Send-then-wait-for-ack loop with timeout and a pause on dead client
+- [x] [P5] Send-then-wait-for-ack loop with timeout and a pause on dead client
 - [ ] [P5] Port the prototype courtroom furniture and lighting to the React scene
 - [ ] [P5] Placeholder characters with sit, stand, talk and point states
 - [ ] [P5] Event player and queue on the client, with ack sending

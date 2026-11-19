@@ -24,6 +24,8 @@ class ConnectionManager:
         self.active_connections: Dict[UUID, List[WebSocket]] = {}
         # (trial_id, seq) -> asyncio.Future
         self._pending_acks: Dict[tuple[UUID, int], asyncio.Future[bool]] = {}
+        # trial_id -> set of acknowledged seq numbers
+        self._acknowledged_seqs: Dict[UUID, set[int]] = {}
 
     async def connect(self, trial_id: UUID, websocket: WebSocket) -> None:
         await websocket.accept()
@@ -42,6 +44,7 @@ class ConnectionManager:
                 self.active_connections[trial_id].remove(websocket)
             if not self.active_connections[trial_id]:
                 del self.active_connections[trial_id]
+                self._acknowledged_seqs.pop(trial_id, None)
         logger.info("WebSocket disconnected for trial %s", trial_id)
 
     def is_connected(self, trial_id: UUID) -> bool:
@@ -72,6 +75,10 @@ class ConnectionManager:
 
     def handle_ack(self, trial_id: UUID, seq: int) -> None:
         """Handle incoming client ack for sequence number."""
+        if trial_id not in self._acknowledged_seqs:
+            self._acknowledged_seqs[trial_id] = set()
+        self._acknowledged_seqs[trial_id].add(seq)
+
         key = (trial_id, seq)
         future = self._pending_acks.pop(key, None)
         if future and not future.done():
@@ -89,6 +96,10 @@ class ConnectionManager:
                 "No client connected for trial %s while awaiting ack for seq %d", trial_id, seq
             )
             return False
+
+        # Fast path: already acknowledged
+        if seq in self._acknowledged_seqs.get(trial_id, set()):
+            return True
 
         loop = asyncio.get_running_loop()
         future: asyncio.Future[bool] = loop.create_future()

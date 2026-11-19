@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     max_trial_tokens: int = Field(default=300000, alias="MAX_TRIAL_TOKENS")
     default_juror_count: int = Field(default=3, alias="DEFAULT_JUROR_COUNT")
     default_deliberation_rounds: int = Field(default=1, alias="DEFAULT_DELIBERATION_ROUNDS")
+    ack_timeout_seconds: float = Field(default=10.0, alias="ACK_TIMEOUT_SECONDS")
 
     # Server & Logging
     cors_origins: Union[List[str], str] = Field(
