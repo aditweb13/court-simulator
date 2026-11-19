@@ -12,6 +12,7 @@ from app.api.v1.cases import router as cases_router
 from app.api.v1.health import router as health_router
 from app.api.v1.router import api_v1_router
 from app.api.v1.trials import router as trials_router
+from app.ws.router import router as ws_router
 from app.config import settings
 from app.core.errors import (
     AppException,
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     app.include_router(cases_router)   # Mounted at /cases
     app.include_router(trials_router)  # Mounted at /trials
     app.include_router(api_v1_router, prefix="/api/v1")
+    app.include_router(ws_router)
 
     return app
 
