@@ -39,7 +39,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P4] Write hand-made cases 2 and 3
 - [x] [P4] `GET /cases` and `GET /cases/{id}` endpoints
 - [x] [P4] Witness memory builder from `saw_event_ids` and its isolation test
-- [ ] [P4] Case validation checks in code
+- [x] [P4] Case validation checks in code
 - [ ] [P5] `trials`, `agents`, `turns` migrations (add deferred FK from `llm_calls.trial_id` to `trials.id`)
 - [ ] [P5] `POST /trials` and `GET /trials/{id}` (create trial from case & mode, store juror_count, rounds, threshold, hung_band)
 - [ ] [P5] WebSocket endpoint, auth handshake and event schemas
