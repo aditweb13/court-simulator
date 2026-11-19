@@ -52,7 +52,10 @@ async def run_async_migrations() -> None:
 def run_migrations_online() -> None:
     if sys.platform == "win32":
         import selectors
-        loop_factory = lambda: asyncio.SelectorEventLoop(selectors.SelectSelector())
+
+        def loop_factory():
+            return asyncio.SelectorEventLoop(selectors.SelectSelector())
+
         asyncio.run(run_async_migrations(), loop_factory=loop_factory)
     else:
         asyncio.run(run_async_migrations())

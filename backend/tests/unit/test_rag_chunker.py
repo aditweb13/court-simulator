@@ -201,9 +201,12 @@ def test_parse_act_markdown_constitution() -> None:
     padding = "TABLE OF CONTENTS\n" * 2500
     sample_const = (
         padding
-        + "**20. Protection in respect of conviction for offences.** —(1) No person shall be convicted...\n\n"
-        + "**21. Protection of life and personal liberty.** —No person shall be deprived of his life...\n\n"
-        + "**50. Separation of judiciary from executive.** The State shall take steps to separate..."
+        + "**20. Protection in respect of conviction for offences.** "
+        + "—(1) No person shall be convicted...\n\n"
+        + "**21. Protection of life and personal liberty.** "
+        + "—No person shall be deprived of his life...\n\n"
+        + "**50. Separation of judiciary from executive.** "
+        + "The State shall take steps to separate..."
     )
     sections = parse_act_markdown(sample_const, act_name="CONSTITUTION")
     assert len(sections) == 3

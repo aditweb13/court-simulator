@@ -103,6 +103,39 @@ class CaseRead(BaseModel):
     witness_count: int = 0
 
 
+class EvidenceRead(BaseModel):
+    """Public representation of case evidence."""
+
+    id: UUID
+    exhibit_no: str
+    type: str
+    description: str
+    admissible: bool
+    reason_inadmissible: Optional[str] = None
+
+
+class WitnessRead(BaseModel):
+    """Public representation of case witness."""
+
+    id: UUID
+    name: str
+    persona: Dict[str, Any] = Field(default_factory=dict)
+
+
+class CaseDetail(BaseModel):
+    """Full public case detail with admitted/marked evidence and witnesses."""
+
+    id: UUID
+    slug: str
+    title: str
+    jurisdiction: str
+    charge: str
+    difficulty: int
+    source: str
+    evidence: List[EvidenceRead] = Field(default_factory=list)
+    witnesses: List[WitnessRead] = Field(default_factory=list)
+
+
 def get_case_json_schema() -> Dict[str, Any]:
     """Return the raw JSON Schema dictionary for Case validation."""
     return CaseSchema.model_json_schema()
