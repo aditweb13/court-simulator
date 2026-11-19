@@ -4,37 +4,48 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 4: Cases and ground truth (Batch B)
+Phase 5: Gateway, orchestrator, live judge in 3D (Batch C)
 
 ## Active Goal
 
-Completed Phase 3 (Batch A) — all 9 tasks finished, verified, and Definition of Done achieved (92.0% top-5 retrieval accuracy on 50 questions, citation checker operational). Awaiting user "go" to proceed with Batch B (Phase 4: Cases and ground truth).
+Completed Phase 4 (Batch B) — all 5 tasks finished, verified, and Definition of Done achieved (3 hand-made cases loaded and validated in PostgreSQL, witness memory isolation test passing with zero leakage). Awaiting user review of the 3 cases and "go" to proceed with Batch C (Phase 5).
 
 ## Last Completed
 
-Batch A (Phase 3: Law Knowledge Base & Retrieval):
-- Ingestion script `backend/app/rag/chunker.py` and `scripts/ingest_law.py` with SOURCES.md gate, token budget splitting (<=512 tokens), gazette noise stripping, and idempotent upsert on `(act, section_no, valid_from)`.
-- Ingested BNS (456 chunks), BNSS (804 chunks), BSA (206 chunks), and Constitution (786 chunks with Arts 20-22 tagged for juror audience).
-- Concordance mapping `backend/app/rag/ipc_bns_map.py` loaded with 222 BNS->IPC and 238 IPC->BNS entries.
-- Deterministic FakeEmbedder & FakeReranker (zero model downloads in CI/unit tests) + production wrappers for BGE-M3 and BGE-Reranker-v2-m3.
-- Hybrid retrieval `retrieve()` with exact statutory/concordance lookup, weighted PostgreSQL FTS, vector similarity, Reciprocal Rank Fusion (k=60), and cross-encoder reranking with audience/date filtering.
-- Citation checker `backend/app/rag/citation.py` enforcing anti-hallucination validation against retrieved chunk IDs.
-- Benchmark eval script `scripts/eval_retrieval.py` validated with 46/50 (92.0%) top-5 accuracy (exceeds >=90% requirement).
-- Complete backend unit test suite: 116 tests passing, ruff and mypy 100% clean.
+Batch B (Phase 4: Cases and Ground Truth):
+- Hand-made Case 1 (`data/cases/case_001.json`): State of Maharashtra v. Vikram Malhotra (Murder under BNS 103(1), cyanide poisoning, inadmissible electronic WhatsApp logs under BSA 63, 3 witnesses with hides and saw_event_ids).
+- Hand-made Case 2 (`data/cases/case_002.json`): State of NCT of Delhi v. Nikhil Kapoor (Cheating under BNS 318(4), commercial real estate escrow fraud, inadmissible unauthenticated photocopy under BSA 60-61).
+- Hand-made Case 3 (`data/cases/case_003.json`): State of Punjab v. Harpreet Singh (Grievous hurt under BNS 117(2), irrigation channel dispute ambush, inadmissible oral hearsay under BSA 55/57).
+- Case integrity validation module `backend/app/cases/validator.py` enforcing post-2024-07-01 offence date, inadmissible exhibit requirement with reasons, unique exhibit IDs, valid saw_event_ids, unique witness names, and reliability bounds [0, 1].
+- CLI case loader `scripts/load_cases.py` with `--check-only` dry run and idempotent upsert into PostgreSQL.
+- REST endpoints `GET /cases` and `GET /cases/{id}` in `backend/app/api/v1/cases.py` with standard success envelopes, UUID/slug lookup, and hidden truth isolation.
+- Witness memory builder and isolation service `backend/app/agents/witness_memory.py` with first-person pronoun transformation, prompt formatter, and isolation query engine.
+- Dedicated unit and isolation test suites (`test_cases_api.py`, `test_case_validation.py`, `test_witness_memory.py`, `test_witness_isolation.py`): 139 passing tests across unit and isolation suites, ruff and mypy 100% clean.
 
 ## Next Step
 
-Awaiting user approval ("go") to begin Batch B (Phase 4: Cases and ground truth):
-1. Write hand-made case 1 and loader script (`data/cases/`)
-2. Write hand-made cases 2 and 3
-3. Implement `GET /cases` and `GET /cases/{id}` endpoints
-4. Witness memory builder from `saw_event_ids` and its isolation test
-5. Case validation checks in code
+Awaiting user review of the 3 cases and approval ("go") to begin Batch C (Phase 5: Gateway, orchestrator, live judge in 3D):
+1. Propose and add the two new tasks to TASKS.md under P1 [P5]:
+   - POST /trials and GET /trials/{id}
+   - Minimal frontend trial setup: case list, Start button, and trial screen
+2. `trials`, `agents`, `turns` migrations (with FK from `llm_calls.trial_id` to `trials.id`)
+3. WebSocket endpoint, auth handshake, and event schemas
+4. Orchestrator skeleton with LangGraph (setup, openings, closings)
+5. Context filter and prompt for judge and clerk
+6. Send-then-wait-for-ack loop with timeout and client dead pause
+7. Port prototype courtroom furniture and lighting to React Three Fiber
+8. Placeholder characters with sit, stand, talk, and point states
+9. Event player and queue on client with ack sending
+10. Camera director with wide, close, and jury shots, and captions overlay
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-19 · Implemented witness memory builder and strict isolation tests verifying witnesses have zero recall of events outside saw_event_ids · Meets Phase 4 Definition of Done and context boundary security.
+2026-11-19 · Implemented GET /cases and GET /cases/{id} supporting slug and UUID lookups while hiding secret truth from public endpoints · Adheres to Architecture.md API conventions.
+2026-11-19 · Created 3 hand-made post-2024-07-01 BNS cases (BNS 103(1) murder, BNS 318(4) cheating, BNS 117(2) grievous hurt) with timeline ground truth, inadmissible exhibits (BSA 63, BSA 60/61, BSA 55/57), and witness secrecy lists · Fulfills Batch B case requirements.
+2026-11-19 · Implemented case validation engine (app.cases.validator) and scripts/load_cases.py loader with dry-run check-only mode · Ensures deterministic database state and schema compliance.
 2026-11-19 · Implemented hybrid retrieval with exact lookup, weighted FTS, vector search, RRF (k=60) and citation-aware reranking achieving 92.0% top-5 benchmark accuracy · Meets Phase 3 Definition of Done.
 2026-11-19 · Added deterministic SHA-256 FakeEmbedder (1024-dim) and lexical FakeReranker for zero-download test execution · Complies with prompt constraint that CI/tests never download external models.
 2026-11-19 · Ingested BNS, BNSS, BSA, Constitution (2,252 chunks total) with IPC concordance mappings and Section 52(1)(q) public domain license tags · Completes legal corpus ingestion for Batch A.
