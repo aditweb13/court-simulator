@@ -4,27 +4,55 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 7: Jurors, verdict judges, voting and scoring (COMPLETED) -> Phase 8: Human lawyer mode & secondary polish (NEXT)
+Phase 8: Secondary features & evaluation (Batch A completed -> Batch B next)
 
 ## Active Goal
 
-Phase 7 Definition of Done achieved:
-A full trial runs from opening to a cited verdict, the aggregator unit tests pass, no juror cites a struck turn, and the verdict is compared with the hidden truth.
-
-Completed Phase 7 tasks:
-1. Juror personas and the step-by-step reasoning prompt
-2. Juror retrieval limited to admitted, non-struck turns, plus its isolation test
-3. Deliberation rounds with a devil's advocate, run in parallel
-4. Private pre- and post-deliberation votes
-5. Three verdict judge agents with different philosophies (textualist, precedent, fairness)
-6. Aggregation module (0.5 × J + 0.5 × P, threshold, hung band, disagreement) with pure unit tests
-7. `votes` and `verdicts` migrations and persistence
-8. Truth comparison and the verdict event
-9. Rich frontend Verdict screen with reasoning, statutory citations, and truth reveal
+Implement all P2 tasks authorized across Batches A through E:
+- **Batch A (Backend foundations)**: COMPLETED & VERIFIED
+  1. Staged case generator with caching [P4] (Done)
+  2. GET /admin/llm-status endpoint plus admin page [P8] (Done)
+  3. Gap a: ADMIN_EMAILS allowlist and admin auth dependency (Done)
+- **Batch B (Evaluation)**: NEXT
+  4. Headless auto-ack client (Gap b)
+  5. scripts/run_batch.py for unattended runs
+  6. Metrics report (scripts/report.py)
+  7. Bias lab (persona mixes and comparative evaluation)
 
 ## Last Completed
 
-Phase 7 (Jurors, Verdict Judges, Voting, and Scoring):
+Batch A (Backend foundations):
+- Staged Case Generator (`backend/app/casegen/`):
+  - 3-stage generation pipeline: (1) truth, timeline & offence with statutory grounding; (2) evidence exhibits (min 1 inadmissible); (3) witnesses with `saw_event_ids`.
+  - SHA-256 hash caching (`gen-{hash12}`) preventing redundant LLM calls.
+  - Statutory citation gate rejecting cases citing unretrieved sections.
+  - Culprit timeline presence validation & witness knowledge isolation enforcement.
+  - `POST /cases/generate` endpoint with JWT auth, 24h rolling rate limit, and daily user cap.
+  - 6 unit tests passing.
+- Admin LLM Pool Observability & Security:
+  - `ADMIN_EMAILS` allowlist loaded from settings; `admin_required` / `get_current_admin_user` dependency enforcing email match (rejects unauthenticated with 401, non-admin with 403).
+  - `GET /admin/llm-status` returning per-provider: `key_alias`, `cooling_down_seconds`, `fail_count`, `last_status`, `recent_call_count` (never leaks secret keys).
+  - 5 admin API unit tests passing.
+- Frontend Admin Page (`frontend/src/ui/AdminPage.tsx`):
+  - Compliant with Design.md: table skeleton loading state, message + retry error state, "No LLM calls yet" empty state.
+  - KPI cards (Total Keys, Ready Keys, Cooling Down, Recorded Inferences) and per-provider health breakdown tables.
+  - 4 frontend Vitest tests passing (`AdminPage.test.tsx`).
+- Quality Assurance:
+  - 204 backend pytest tests passing (0 failures).
+  - 19 frontend Vitest tests passing (0 failures).
+  - Frontend typecheck (`tsc -b`) clean.
+  - ESLint clean (0 errors).
+  - Ruff check & format clean.
+  - Mypy check clean.
+
+## Decisions Log
+
+Newest on top. Format: `YYYY-MM-DD · decision · reason`.
+
+2026-11-19 · Implemented GET /admin/llm-status and admin_required auth dependency checking ADMIN_EMAILS · Restricts LLM pool and observability metrics to designated administrators without exposing secret keys.
+2026-11-19 · Implemented frontend AdminPage with table skeleton loading, error retry, empty states, and KPI cards · Fulfills Design.md specifications for system administration view.
+2026-11-19 · Implemented 3-stage case generator with caching, statutory retrieval grounding, and strict validation · Fulfills Batch A [P4] requirements.
+2026-11-19 · Authorized batch execution exception to Rules.md covering P2 secondary tasks in Batches A through E · Explicit user exception logged per prompt.
 - Database migrations & ORM:
   - Migration `007_create_votes_and_verdicts_tables.py` creating `votes` (pre/final juror and verdict judge votes) and `verdicts` tables with foreign keys and indexes.
   - `Vote` and `Verdict` SQLAlchemy models in `backend/app/db/models/trial.py`.
