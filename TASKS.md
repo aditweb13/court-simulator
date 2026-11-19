@@ -43,7 +43,7 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P5] `trials`, `agents`, `turns` migrations (add deferred FK from `llm_calls.trial_id` to `trials.id`)
 - [x] [P5] `POST /trials` and `GET /trials/{id}` (create trial from case & mode, store juror_count, rounds, threshold, hung_band)
 - [x] [P5] WebSocket endpoint, auth handshake and event schemas
-- [ ] [P5] Orchestrator skeleton with LangGraph (setup, openings, closings)
+- [x] [P5] Orchestrator skeleton with LangGraph (setup, openings, closings)
 - [ ] [P5] Context filter and prompt for the judge and the clerk
 - [ ] [P5] Send-then-wait-for-ack loop with timeout and a pause on dead client
 - [ ] [P5] Port the prototype courtroom furniture and lighting to the React scene
