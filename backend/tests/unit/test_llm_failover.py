@@ -21,12 +21,20 @@ from app.llm.pool import KeyPool
 from app.llm.router import chat
 
 
+@pytest.fixture(autouse=True)
+def clean_pools():
+    """Ensure pools are clean for deterministic failover tests and restored afterward."""
+    for pool in pool_registry._pools.values():
+        pool.keys.clear()
+    yield
+    pool_registry.reload_pools()
+
+
 @pytest.mark.asyncio
 @respx.mock
 async def test_failover_bad_key_401_benched_next_key_succeeds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    pool_registry.reload_pools()
     groq_pool = pool_registry.get_pool("groq")
     assert groq_pool is not None
 
@@ -67,7 +75,6 @@ async def test_failover_bad_key_401_benched_next_key_succeeds(
 async def test_failover_429_then_next_key_succeeds(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    pool_registry.reload_pools()
     groq_pool = pool_registry.get_pool("groq")
     assert groq_pool is not None
 
@@ -106,7 +113,6 @@ async def test_failover_429_then_next_key_succeeds(
 @pytest.mark.asyncio
 @respx.mock
 async def test_failover_all_keys_exhausted_then_next_provider() -> None:
-    pool_registry.reload_pools()
     groq_pool = pool_registry.get_pool("groq")
     gemini_pool = pool_registry.get_pool("gemini")
     assert groq_pool is not None and gemini_pool is not None
@@ -140,7 +146,6 @@ async def test_failover_all_keys_exhausted_then_next_provider() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_failover_timeout_benches_30s_then_next_provider() -> None:
-    pool_registry.reload_pools()
     groq_pool = pool_registry.get_pool("groq")
     gemini_pool = pool_registry.get_pool("gemini")
     assert groq_pool is not None and gemini_pool is not None
@@ -170,7 +175,6 @@ async def test_failover_timeout_benches_30s_then_next_provider() -> None:
 @pytest.mark.asyncio
 @respx.mock
 async def test_failover_400_skips_provider_without_benching() -> None:
-    pool_registry.reload_pools()
     groq_pool = pool_registry.get_pool("groq")
     gemini_pool = pool_registry.get_pool("gemini")
     assert groq_pool is not None and gemini_pool is not None

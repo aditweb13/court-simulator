@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.v1.admin import router as admin_router
 from app.api.v1.cases import router as cases_router
 from app.api.v1.health import router as health_router
 from app.api.v1.router import api_v1_router
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)  # Mounted at /health
     app.include_router(cases_router)  # Mounted at /cases
     app.include_router(trials_router)  # Mounted at /trials
+    app.include_router(admin_router)  # Mounted at /admin
     app.include_router(api_v1_router, prefix="/api/v1")
     app.include_router(ws_router)
 

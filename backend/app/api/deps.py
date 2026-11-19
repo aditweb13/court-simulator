@@ -8,6 +8,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.errors import AppException, ErrorCode
 from app.core.security import decode_access_token
 from app.db.models.user import User
@@ -73,3 +74,22 @@ async def get_optional_current_user(
         return result.scalar_one_or_none()
     except Exception:
         return None
+
+
+async def get_current_admin_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Enforce that current_user has an email configured in ADMIN_EMAILS."""
+    if (
+        not current_user.email
+        or current_user.email.strip().lower() not in settings.admin_emails_list
+    ):
+        raise AppException(
+            code=ErrorCode.FORBIDDEN,
+            message="Admin privileges required",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+    return current_user
+
+
+admin_required = get_current_admin_user

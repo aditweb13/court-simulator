@@ -50,6 +50,7 @@ export const VerdictScreen: React.FC = () => {
 
   useEffect(() => {
     if (!verdict) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsOpen(true);
 
     if (trialId) {

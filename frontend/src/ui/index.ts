@@ -3,4 +3,6 @@ export * from "./Transcript";
 export * from "./CameraControls";
 export * from "./TrialControls";
 export * from "./VerdictScreen";
+export * from "./AdminPage";
+
 

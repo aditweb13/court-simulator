@@ -1,15 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "./lib/utils";
 import { CourtroomCanvas } from "./scene/CourtroomCanvas";
 import { TrialControls } from "./ui/TrialControls";
 import { Transcript } from "./ui/Transcript";
 import { VerdictScreen } from "./ui/VerdictScreen";
+import { AdminPage } from "./ui/AdminPage";
 import { useTrialStore } from "./store/trialStore";
 
 export default function App() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [route, setRoute] = useState<string>(
+    typeof window !== "undefined" && window.location.pathname.startsWith("/admin")
+      ? "/admin"
+      : "/",
+  );
   const trialState = useTrialStore((state) => state.trialState);
   const status = useTrialStore((state) => state.status);
+
+  useEffect(() => {
+    const onPopState = () => {
+      setRoute(window.location.pathname.startsWith("/admin") ? "/admin" : "/");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const navigate = (to: string) => {
+    window.history.pushState({}, "", to);
+    setRoute(to);
+  };
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -57,6 +76,17 @@ export default function App() {
           </div>
 
           <button
+            onClick={() => navigate(route === "/admin" ? "/" : "/admin")}
+            className={cn(
+              "px-3.5 py-1.5 text-xs font-medium rounded-[var(--radius-md)] border border-[var(--border)]",
+              "hover:border-[var(--primary)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer",
+            )}
+            aria-label={route === "/admin" ? "Return to Courtroom" : "Open Admin Gateway"}
+          >
+            {route === "/admin" ? "⚖ Courtroom" : "⚙ Admin"}
+          </button>
+
+          <button
             onClick={toggleTheme}
             className={cn(
               "px-3.5 py-1.5 text-xs font-medium rounded-[var(--radius-md)] border border-[var(--border)]",
@@ -69,12 +99,16 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Courtroom Simulation Interface */}
-      <main
-        id="main-content"
-        className="flex-1 max-w-[1360px] w-full mx-auto p-4 md:p-6 flex flex-col gap-6"
-      >
-        {/* 3D Viewport Chamber Shell */}
+      {/* Conditional rendering for /admin vs main courtroom */}
+      {route === "/admin" ? (
+        <AdminPage onBack={() => navigate("/")} />
+      ) : (
+        /* Main Courtroom Simulation Interface */
+        <main
+          id="main-content"
+          className="flex-1 max-w-[1360px] w-full mx-auto p-4 md:p-6 flex flex-col gap-6"
+        >
+          {/* 3D Viewport Chamber Shell */}
         <section
           className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] overflow-hidden shadow-sm flex flex-col"
           aria-label="3D Courtroom Simulation Chamber"
@@ -129,6 +163,7 @@ export default function App() {
           </div>
         </section>
       </main>
+      )}
 
       <VerdictScreen />
     </div>

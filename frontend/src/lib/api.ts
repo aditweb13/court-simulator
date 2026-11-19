@@ -28,6 +28,24 @@ export interface TrialCreateResponse {
   state: string;
 }
 
+export interface KeyStatus {
+  key_alias: string;
+  provider: string;
+  is_ready: boolean;
+  cooling_down_seconds: number;
+  fail_count: number;
+  last_status: string | null;
+  recent_call_count: number;
+}
+
+export interface ProviderStatus {
+  provider: string;
+  total_keys: number;
+  ready_keys: number;
+  cooling_keys: number;
+  keys: KeyStatus[];
+}
+
 const API_BASE = "";
 
 /**
@@ -111,4 +129,30 @@ export async function createTrial(
   const json = await res.json();
   return json.data;
 }
+
+/**
+ * Fetch LLM pool provider status and key health (admin only).
+ */
+export async function fetchLLMStatus(explicitToken?: string): Promise<ProviderStatus[]> {
+  const token = explicitToken || (await getGuestToken());
+  const res = await fetch(`${API_BASE}/admin/llm-status`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const errorJson = await res.json().catch(() => null);
+    const msg =
+      errorJson?.error?.message ||
+      (res.status === 403
+        ? "Admin privileges required. Please ensure you are authenticated as an admin."
+        : `Failed to fetch LLM status (${res.status})`);
+    throw new Error(msg);
+  }
+
+  const json = await res.json();
+  return json.data || [];
+}
+
 

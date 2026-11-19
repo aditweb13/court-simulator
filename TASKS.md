@@ -71,9 +71,9 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 
 ## P2: secondary
 
-- [ ] [P4] Staged case generator (truth, evidence, witnesses) with caching
-- [ ] [P8] `GET /admin/llm-status` endpoint and admin page showing pool health
-- [ ] [P8] ADMIN_EMAILS allowlist and admin auth dependency
+- [x] [P4] Staged case generator (truth, evidence, witnesses) with caching
+- [x] [P8] `GET /admin/llm-status` endpoint and admin page showing pool health
+- [x] [P8] ADMIN_EMAILS allowlist and admin auth dependency
 - [ ] [P8] Headless auto-ack client for unattended trial runs
 - [ ] [P8] `scripts/run_batch.py` for unattended runs
 - [ ] [P8] Metrics report: truth-match, cost, isolation violations, disagreement
