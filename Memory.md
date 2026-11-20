@@ -25,7 +25,18 @@ All tasks in TASKS.md across P0, P1, P2 (Batches A through E), and P3 (Nice-to-h
 
 ## Last Completed
 
-P3 Polish & Enhancements:
+### Runtime Fix — COMMITTED e22fb7e
+
+Application is now **fully operational** end-to-end. Start with:
+- Terminal 1: `python run_server.py` (from project root)
+- Terminal 2: `cd frontend ; npm run dev` → open http://localhost:5173
+
+Key fixes committed:
+- `run_server.py`: Uses `asyncio.SelectorEventLoop` factory to bypass Windows ProactorEventLoop/psycopg incompatibility.
+- `frontend/vite.config.ts`: Proxy `/api` and `/ws` to `127.0.0.1:8000`.
+- `frontend/src/lib/api.ts`: Read `json.data?.access_token` (not `.token`); normalize `"spectator"` mode to `"watch"`.
+
+### P3 Polish & Enhancements:
 - Verdict Judge Jurisprudential Doctrines (`backend/app/verdict/philosophies.py` & `backend/app/context/verdict_judge.py`):
   - Created structured `PhilosophyDoctrine` models for Textualist (strict construction under BNS/BSA, Maxwell, *M. Pentiah*), Precedent (Article 141, Panchsheel circumstantial evidence in *Sharad Birdhichand Sarda*), and Constitutional Fairness (Articles 20, 21, 22, *Maneka Gandhi*, *D.K. Basu*).
   - Injected universal Indian judicial ethical canons and procedural deliberation instructions into verdict judge prompts.
