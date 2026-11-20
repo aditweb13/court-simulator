@@ -1,7 +1,12 @@
 """FastAPI application factory and middleware setup."""
 
+import asyncio
+import sys
 import uuid
 from typing import Callable
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError

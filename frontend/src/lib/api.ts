@@ -80,7 +80,10 @@ export async function getGuestToken(): Promise<string> {
   }
 
   const json = await res.json();
-  const token = json.data.token;
+  const token = json.data?.access_token || json.data?.token;
+  if (!token) {
+    throw new Error("Invalid auth response: missing access token");
+  }
   sessionStorage.setItem("verdict_token", token);
   return token;
 }
@@ -125,9 +128,10 @@ export async function createTrial(
   humanRole?: string | null,
 ): Promise<TrialCreateResponse> {
   const token = await getGuestToken();
+  const normalizedMode = mode === "spectator" ? "watch" : mode;
   const payload: Record<string, unknown> = {
     case_id: caseId,
-    mode: mode,
+    mode: normalizedMode,
   };
   if (humanRole) {
     payload.human_role = humanRole;
