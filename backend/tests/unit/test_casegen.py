@@ -7,9 +7,6 @@ from typing import Any, List
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.deps import get_current_user
 from app.casegen import (
     CaseGenerateRequest,
@@ -24,6 +21,8 @@ from app.db.session import async_session_maker, get_db
 from app.main import app
 from app.rag.retriever import RetrievedChunk
 from app.schemas.case import EvidenceData, TimelineEvent, WitnessData
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.fixture

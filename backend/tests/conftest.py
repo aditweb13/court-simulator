@@ -1,8 +1,17 @@
 """Pytest configuration and global fixtures."""
 
 import asyncio
+import os
 import sys
 from pathlib import Path
+
+# Ensure libpq from PostgreSQL installation is discoverable on Windows
+# to support pure-python psycopg under Windows 11 Smart App Control
+if sys.platform == "win32":
+    pg_bin = r"C:\Program Files\PostgreSQL\18\bin"
+    if os.path.isdir(pg_bin) and pg_bin not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = pg_bin + os.pathsep + os.environ.get("PATH", "")
+    os.environ.setdefault("PSYCOPG_IMPL", "python")
 
 import pytest
 

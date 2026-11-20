@@ -28,8 +28,12 @@ from app.rag.chunker import (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Ingest statutory acts into knowledge_chunks")
-    parser.add_argument("--file", type=str, required=True, help="Path to act PDF, text or JSON file")
-    parser.add_argument("--act", type=str, default=None, help="Name of the act (e.g. BNS, BNSS, BSA)")
+    parser.add_argument(
+        "--file", type=str, required=True, help="Path to act PDF, text or JSON file"
+    )
+    parser.add_argument(
+        "--act", type=str, default=None, help="Name of the act (e.g. BNS, BNSS, BSA)"
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",

@@ -1,0 +1,49 @@
+{
+  "name": "intuitive_holistic",
+  "description": "Panel concentrated in community mediation, counseling, and human contextual assessment.",
+  "personas": [
+    {
+      "juror_no": 1,
+      "occupation": "Family Counselor",
+      "reasoning_style": "holistic",
+      "traits": "Evaluates emotional plausibility, stress indicators, and relational context."
+    },
+    {
+      "juror_no": 2,
+      "occupation": "Community Center Mediator",
+      "reasoning_style": "contextual",
+      "traits": "Considers neighborhood environment and non-verbal credibility cues."
+    },
+    {
+      "juror_no": 3,
+      "occupation": "Primary School Principal",
+      "reasoning_style": "narrative",
+      "traits": "Seeks coherent narrative arcs and evaluates demeanor consistency."
+    },
+    {
+      "juror_no": 4,
+      "occupation": "Neighborhood Clinic Nurse",
+      "reasoning_style": "observational",
+      "traits": "Attuned to witness hesitation, physiological stress, and trauma reactions."
+    },
+    {
+      "juror_no": 5,
+      "occupation": "Small Business Cooperative Organizer",
+      "reasoning_style": "pragmatic",
+      "traits": "Weighs circumstantial incentives and interpersonal pressures."
+    },
+    {
+      "juror_no": 6,
+      "occupation": "Community Health Educator",
+      "reasoning_style": "empathic",
+      "traits": "Considers whether witness descriptions align with natural human reactions."
+    },
+    {
+      "juror_no": 7,
+      "occupation": "Local Theater Director",
+      "reasoning_style": "dramatic-coherence",
+      "traits": "Scrutinizes authentic dialogue delivery versus rehearsed narratives."
+    }
+  ]
+}
+

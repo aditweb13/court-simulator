@@ -5,8 +5,6 @@ import json
 import uuid
 
 import pytest
-from starlette.testclient import TestClient
-
 from app.core.security import create_access_token
 from app.main import app
 from app.ws.connection import ConnectionManager
@@ -22,6 +20,7 @@ from app.ws.schemas import (
     StateEvent,
     VerdictEvent,
 )
+from starlette.testclient import TestClient
 
 
 def test_ws_schemas_roundtrip():

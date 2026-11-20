@@ -11,8 +11,6 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-
 from app.context.defense import (
     build_defense_closing_prompt,
     build_defense_context,
@@ -28,6 +26,7 @@ from app.context.witness import build_witness_answer_prompt, build_witness_conte
 from app.db.models.trial import Turn
 from app.db.session import async_session_maker
 from app.main import app
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture

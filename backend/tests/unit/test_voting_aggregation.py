@@ -13,7 +13,6 @@ Verifies:
 from __future__ import annotations
 
 import pytest
-
 from app.voting import (
     DEFAULT_HUNG_BAND,
     DEFAULT_VERDICT_THRESHOLD,

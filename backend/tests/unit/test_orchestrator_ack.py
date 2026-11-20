@@ -7,9 +7,6 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-from starlette.websockets import WebSocket
-
 from app.db.models.trial import Trial
 from app.db.session import async_session_maker
 from app.main import app
@@ -21,6 +18,8 @@ from app.orchestrator.schemas import (
 )
 from app.orchestrator.state import CourtroomState, TrialPhase
 from app.ws.connection import manager as ws_manager
+from httpx import ASGITransport, AsyncClient
+from starlette.websockets import WebSocket
 
 
 @pytest.fixture

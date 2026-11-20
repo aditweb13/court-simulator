@@ -3,12 +3,11 @@
 import httpx
 import pytest
 import respx
-from pydantic import BaseModel, Field
-
 from app.core.errors import LLMUnavailable
 from app.llm.chains import pool_registry
 from app.llm.client import get_provider_endpoint
 from app.llm.router import chat
+from pydantic import BaseModel, Field
 
 
 class SampleVerdict(BaseModel):

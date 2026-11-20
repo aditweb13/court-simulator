@@ -1,0 +1,49 @@
+{
+  "case_slug": "state-v-malhotra-2024",
+  "runs_per_mix": 2,
+  "generated_at": "2026-11-19T15:52:14.711276+00:00",
+  "mix_results": {
+    "balanced": {
+      "n": 2,
+      "guilty_rate": 1.0,
+      "not_guilty_rate": 0.0,
+      "hung_rate": 0.0,
+      "truth_match_rate": 1.0,
+      "truth_match_ci_95": [
+        0.3424,
+        1.0
+      ],
+      "mean_j_score": 1.0,
+      "mean_p_score": 0.82,
+      "mean_score": 0.91
+    },
+    "rigorous_analytic": {
+      "n": 2,
+      "guilty_rate": 1.0,
+      "not_guilty_rate": 0.0,
+      "hung_rate": 0.0,
+      "truth_match_rate": 1.0,
+      "truth_match_ci_95": [
+        0.3424,
+        1.0
+      ],
+      "mean_j_score": 1.0,
+      "mean_p_score": 0.82,
+      "mean_score": 0.91
+    },
+    "intuitive_holistic": {
+      "n": 2,
+      "guilty_rate": 1.0,
+      "not_guilty_rate": 0.0,
+      "hung_rate": 0.0,
+      "truth_match_rate": 1.0,
+      "truth_match_ci_95": [
+        0.3424,
+        1.0
+      ],
+      "mean_j_score": 1.0,
+      "mean_p_score": 0.82,
+      "mean_score": 0.91
+    }
+  }
+}

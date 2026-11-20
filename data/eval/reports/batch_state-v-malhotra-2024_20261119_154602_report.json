@@ -1,0 +1,58 @@
+{
+  "batch_file": "batch_state-v-malhotra-2024_20261119_154602.jsonl",
+  "case_slug": "state-v-malhotra-2024",
+  "persona_mix": "default",
+  "generated_at": "2026-11-19T15:49:33.180310+00:00",
+  "summary": {
+    "total_runs": 20,
+    "completed_runs": 20,
+    "completion_rate": 1.0
+  },
+  "verdict_metrics": {
+    "truth_match_rate": 0.0,
+    "truth_match_ci_95": [
+      0.0,
+      0.1611
+    ],
+    "guilty_rate": 0.0,
+    "not_guilty_rate": 0.0,
+    "hung_rate": 1.0,
+    "mean_score": 0.744,
+    "mean_j_score": 0.667,
+    "mean_p_score": 0.821,
+    "mean_disagreement": 0.154
+  },
+  "cost_and_performance": {
+    "total_tokens": 100000,
+    "tokens_in": 75000,
+    "tokens_out": 25000,
+    "mean_tokens_per_trial": 5000.0,
+    "total_llm_calls": 500,
+    "mean_calls_per_trial": 25.0,
+    "mean_latency_ms": 15.0,
+    "failover_count": 0,
+    "provider_usage": {
+      "fake": 500
+    }
+  },
+  "isolation_violations": {
+    "struck_turn_citations": {
+      "count": 0,
+      "type": "exact",
+      "passed": true,
+      "description": "Juror or judge votes citing testimony struck upon sustained objection."
+    },
+    "unretrieved_chunk_citations": {
+      "count": 0,
+      "type": "exact",
+      "passed": true,
+      "description": "Judicial citations of statutory sections not present in retrieved context."
+    },
+    "witness_timeline_leakage": {
+      "count": 0,
+      "type": "heuristic",
+      "passed": true,
+      "description": "Witness turns containing distinctive facts from unwitnessed timeline events."
+    }
+  }
+}

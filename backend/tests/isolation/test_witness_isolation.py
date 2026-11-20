@@ -12,7 +12,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from app.agents.witness_memory import build_witness_memory
 from app.schemas.case import CaseSchema
 

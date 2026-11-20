@@ -67,7 +67,10 @@ async def verify() -> int:
 
         # 5. Check BNS IPC equivalents
         res_ipc = await session.execute(
-            text("SELECT count(*) FROM knowledge_chunks WHERE act = 'BNS' AND ipc_equivalent IS NOT NULL")
+            text(
+                "SELECT count(*) FROM knowledge_chunks "
+                "WHERE act = 'BNS' AND ipc_equivalent IS NOT NULL"
+            )
         )
         ipc_count = res_ipc.scalar()
         print(f"\nBNS chunks with IPC equivalent: {ipc_count}")
@@ -75,7 +78,10 @@ async def verify() -> int:
 
         # 6. Dates check
         res_dates = await session.execute(
-            text("SELECT act, min(valid_from), max(valid_from) FROM knowledge_chunks GROUP BY act ORDER BY act")
+            text(
+                "SELECT act, min(valid_from), max(valid_from) "
+                "FROM knowledge_chunks GROUP BY act ORDER BY act"
+            )
         )
         print("\nEffective Date Range:")
         for r in res_dates.fetchall():

@@ -13,7 +13,6 @@ Covers all required failover conditions:
 import httpx
 import pytest
 import respx
-
 from app.core.errors import LLMUnavailable
 from app.llm.chains import pool_registry
 from app.llm.client import get_provider_endpoint

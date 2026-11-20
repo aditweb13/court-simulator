@@ -63,7 +63,11 @@ def _build_default_trial_config() -> Dict[str, Any]:
     }
 
 
-def _seed_trial_agents(case: Case, config: Dict[str, Any]) -> List[Agent]:
+def _seed_trial_agents(
+    case: Case,
+    config: Dict[str, Any],
+    custom_juror_personas: Optional[List[Dict[str, Any]]] = None,
+) -> List[Agent]:
     agents: List[Agent] = []
 
     # 1. Judge
@@ -146,17 +150,24 @@ def _seed_trial_agents(case: Case, config: Dict[str, Any]) -> List[Agent]:
 
     # 7. Jurors
     juror_count = int(config.get("juror_count", 3))
+    personas_source = custom_juror_personas or JUROR_PERSONAS
     for i in range(1, juror_count + 1):
-        persona_template = JUROR_PERSONAS[(i - 1) % len(JUROR_PERSONAS)]
+        persona_template = personas_source[(i - 1) % len(personas_source)]
+        style = persona_template.get("reasoning_style") or persona_template.get("style", "balanced")
+        traits = persona_template.get("traits") or persona_template.get("description", "")
+        occupation = persona_template.get("occupation")
+        persona_dict: Dict[str, Any] = {
+            "juror_no": i,
+            "reasoning_style": style,
+            "traits": traits,
+        }
+        if occupation:
+            persona_dict["occupation"] = occupation
         agents.append(
             Agent(
                 role="juror",
                 tier="small",
-                persona={
-                    "juror_no": i,
-                    "reasoning_style": persona_template["style"],
-                    "traits": persona_template["description"],
-                },
+                persona=persona_dict,
                 memory=[],
             )
         )

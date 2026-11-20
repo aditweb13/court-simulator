@@ -74,10 +74,10 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P4] Staged case generator (truth, evidence, witnesses) with caching
 - [x] [P8] `GET /admin/llm-status` endpoint and admin page showing pool health
 - [x] [P8] ADMIN_EMAILS allowlist and admin auth dependency
-- [ ] [P8] Headless auto-ack client for unattended trial runs
-- [ ] [P8] `scripts/run_batch.py` for unattended runs
-- [ ] [P8] Metrics report: truth-match, cost, isolation violations, disagreement
-- [ ] [P8] Bias lab: batch runs with different juror persona mixes
+- [x] [P8] Headless auto-ack client for unattended trial runs
+- [x] [P8] `scripts/run_batch.py` for unattended runs
+- [x] [P8] Metrics report: truth-match, cost, isolation violations, disagreement
+- [x] [P8] Bias lab: batch runs with different juror persona mixes
 - [ ] [P4] Optional key_facts list per timeline event for case schema
 - [ ] [P8] `GET /trials/{id}/turns` endpoint
 - [ ] [P8] Replay endpoint streaming stored turns

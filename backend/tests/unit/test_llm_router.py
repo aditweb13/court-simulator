@@ -3,7 +3,6 @@
 import httpx
 import pytest
 import respx
-
 from app.core.errors import LLMUnavailable
 from app.llm.chains import (
     ChainLink,

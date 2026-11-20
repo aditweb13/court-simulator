@@ -4,7 +4,7 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 8: Secondary features & evaluation (Batch A completed -> Batch B next)
+Phase 8: Secondary features & evaluation (Batch B completed -> Batch C next)
 
 ## Active Goal
 
@@ -13,42 +13,57 @@ Implement all P2 tasks authorized across Batches A through E:
   1. Staged case generator with caching [P4] (Done)
   2. GET /admin/llm-status endpoint plus admin page [P8] (Done)
   3. Gap a: ADMIN_EMAILS allowlist and admin auth dependency (Done)
-- **Batch B (Evaluation)**: NEXT
-  4. Headless auto-ack client (Gap b)
-  5. scripts/run_batch.py for unattended runs
-  6. Metrics report (scripts/report.py)
-  7. Bias lab (persona mixes and comparative evaluation)
+- **Batch B (Evaluation)**: COMPLETED & VERIFIED
+  4. Headless auto-ack client (Gap b) (Done)
+  5. scripts/run_batch.py for unattended runs (Done)
+  6. Metrics report (scripts/report.py with Wilson CI & isolation audit) (Done)
+  7. Bias lab (persona mixes and comparative evaluation) (Done)
+- **Batch C (Human Lawyer Mode)**: NEXT
+  8. Human lawyer WebSocket commands (examine, argue, object via HumanActionEvent)
+  9. Lawyer-mode UI panel in frontend
+  10. Spectator lock preventing human input in watch mode
+- **Batch D (Retrieval & Generation)**:
+  11. Per-turn RAG citations in examination
+  12. Case generator statutory grounding improvements
+- **Batch E (Polish)**:
+  13. Markdown/PDF transcript export
+  14. Loading/error states & accessibility pass
 
 ## Last Completed
 
-Batch A (Backend foundations):
-- Staged Case Generator (`backend/app/casegen/`):
-  - 3-stage generation pipeline: (1) truth, timeline & offence with statutory grounding; (2) evidence exhibits (min 1 inadmissible); (3) witnesses with `saw_event_ids`.
-  - SHA-256 hash caching (`gen-{hash12}`) preventing redundant LLM calls.
-  - Statutory citation gate rejecting cases citing unretrieved sections.
-  - Culprit timeline presence validation & witness knowledge isolation enforcement.
-  - `POST /cases/generate` endpoint with JWT auth, 24h rolling rate limit, and daily user cap.
-  - 6 unit tests passing.
-- Admin LLM Pool Observability & Security:
-  - `ADMIN_EMAILS` allowlist loaded from settings; `admin_required` / `get_current_admin_user` dependency enforcing email match (rejects unauthenticated with 401, non-admin with 403).
-  - `GET /admin/llm-status` returning per-provider: `key_alias`, `cooling_down_seconds`, `fail_count`, `last_status`, `recent_call_count` (never leaks secret keys).
-  - 5 admin API unit tests passing.
-- Frontend Admin Page (`frontend/src/ui/AdminPage.tsx`):
-  - Compliant with Design.md: table skeleton loading state, message + retry error state, "No LLM calls yet" empty state.
-  - KPI cards (Total Keys, Ready Keys, Cooling Down, Recorded Inferences) and per-provider health breakdown tables.
-  - 4 frontend Vitest tests passing (`AdminPage.test.tsx`).
+Batch B (Evaluation pipeline & headless execution):
+- Headless Auto-Ack Client (`backend/app/orchestrator/headless.py`):
+  - Mock WebSocket context manager auto-acknowledging LineEvents (`handle_ack`) to allow fully unattended runs without browser UI.
+  - Intercepts all emitted trial events into memory with type filter helpers.
+  - 2 unit tests passing in `backend/tests/unit/test_headless_client.py`.
+- Deterministic Fake LLM (`backend/app/llm/fake.py`):
+  - Structured output generator covering all courtroom roles (judge, clerk, prosecutor, defense, witness, jurors, verdict judges).
+  - Integrates with `record_llm_call` for accurate token and cost evaluation reporting.
+- Unattended Batch Runner (`scripts/run_batch.py`):
+  - Sequential execution CLI with `--case`, `--runs`, `--jurors`, `--rounds`, `--persona-mix`, `--fake-llm`, `--max-total-tokens`, `--yes`.
+  - Incremental JSONL persistence with resume capability skipping already-completed run indices.
+- Evaluation Metrics & Isolation Auditor (`scripts/report.py`):
+  - Wilson score 95% confidence interval for truth-match rates.
+  - Diagnostic aggregation metrics ($J$, $P$, Statutory Score, $|J-P|$ disagreement).
+  - Exact foreign-key isolation audit (struck turn citations, unretrieved statutory citations) and heuristic witness knowledge leakage audit.
+  - Outputs both machine-readable JSON and formatted GitHub alert markdown reports.
+- Bias Laboratory (`scripts/bias_lab.py`):
+  - Automated comparative evaluation across 3 demographic-free persona mix panels (`balanced`, `rigorous_analytic`, `intuitive_holistic`).
+  - Strict compliance with ethical charter banning protected demographic attributes.
 - Quality Assurance:
-  - 204 backend pytest tests passing (0 failures).
+  - 208 backend pytest tests passing (0 failures).
   - 19 frontend Vitest tests passing (0 failures).
   - Frontend typecheck (`tsc -b`) clean.
   - ESLint clean (0 errors).
-  - Ruff check & format clean.
-  - Mypy check clean.
+  - Ruff check & format clean on both backend/ and scripts/.
+  - Mypy check clean on headless.py and fake.py.
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-20 · Configured libpq PATH discovery and pure-python psycopg fallback in conftest.py and session.py · Resolves Windows 11 Smart App Control blocking unsigned psycopg-binary wheel DLLs.
+2026-11-20 · Completed Batch B evaluation suite with HeadlessAutoAckClient, batch runner, metrics report with Wilson CI, and bias lab · Fulfills Batch B evaluation requirements with 100% test pass rate.
 2026-11-19 · Implemented GET /admin/llm-status and admin_required auth dependency checking ADMIN_EMAILS · Restricts LLM pool and observability metrics to designated administrators without exposing secret keys.
 2026-11-19 · Implemented frontend AdminPage with table skeleton loading, error retry, empty states, and KPI cards · Fulfills Design.md specifications for system administration view.
 2026-11-19 · Implemented 3-stage case generator with caching, statutory retrieval grounding, and strict validation · Fulfills Batch A [P4] requirements.

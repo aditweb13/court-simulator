@@ -14,9 +14,6 @@ import uuid
 from unittest.mock import patch
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy import select
-
 from app.db.models.trial import Turn, TurnEmbedding
 from app.db.session import async_session_maker
 from app.main import app
@@ -27,6 +24,8 @@ from app.orchestrator.schemas import (
     WitnessAnswerOutput,
 )
 from app.orchestrator.state import CourtroomState, TrialPhase
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 
 
 @pytest.fixture

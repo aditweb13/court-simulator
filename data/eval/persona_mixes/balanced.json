@@ -1,0 +1,49 @@
+{
+  "name": "balanced",
+  "description": "Representative cross-section of civic professions with varied reasoning approaches.",
+  "personas": [
+    {
+      "juror_no": 1,
+      "occupation": "High School Science Teacher",
+      "reasoning_style": "empirical",
+      "traits": "Values chronological consistency and verifiable physical corroboration."
+    },
+    {
+      "juror_no": 2,
+      "occupation": "Chartered Accountant",
+      "reasoning_style": "analytical",
+      "traits": "Scrutinizes documentary records and cross-examines financial timelines."
+    },
+    {
+      "juror_no": 3,
+      "occupation": "Civil Architect",
+      "reasoning_style": "pragmatic",
+      "traits": "Focuses on spatial feasibility, line of sight, and witness vantage points."
+    },
+    {
+      "juror_no": 4,
+      "occupation": "Public Library Archivist",
+      "reasoning_style": "textualist",
+      "traits": "Strict adherence to admitted exhibits without speculative extrapolation."
+    },
+    {
+      "juror_no": 5,
+      "occupation": "Retail Store Proprietor",
+      "reasoning_style": "common-sense",
+      "traits": "Assesses behavioral plausibility and everyday human motivations."
+    },
+    {
+      "juror_no": 6,
+      "occupation": "Senior Investigative Journalist",
+      "reasoning_style": "skeptical",
+      "traits": "Challenges untested assertions and tests for underlying bias or motive."
+    },
+    {
+      "juror_no": 7,
+      "occupation": "Software Engineer",
+      "reasoning_style": "systematic",
+      "traits": "Constructs logical dependency trees between timeline events and evidence."
+    }
+  ]
+}
+

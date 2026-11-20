@@ -1,7 +1,6 @@
 """Unit tests for case validation checks and business rules."""
 
 import pytest
-
 from app.cases.validator import CaseValidationError, assert_case_valid, validate_case_integrity
 from app.schemas.case import CaseSchema, EvidenceData, TimelineEvent, TruthData, WitnessData
 

@@ -4,8 +4,6 @@ import uuid
 from decimal import Decimal
 
 import pytest
-from pydantic import ValidationError
-
 from app.db.models.case import Case, Evidence, Witness
 from app.schemas.case import (
     CaseSchema,
@@ -14,6 +12,7 @@ from app.schemas.case import (
     WitnessData,
     get_case_json_schema,
 )
+from pydantic import ValidationError
 
 
 def test_case_pydantic_schema_valid() -> None:

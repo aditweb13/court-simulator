@@ -8,10 +8,9 @@ import logging
 from typing import Dict, List
 from uuid import UUID
 
+from app.ws.schemas import ServerEvent
 from fastapi import WebSocket
 from pydantic import BaseModel
-
-from app.ws.schemas import ServerEvent
 
 logger = logging.getLogger(__name__)
 

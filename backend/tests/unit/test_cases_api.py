@@ -1,9 +1,8 @@
 """Unit and integration tests for /cases and /cases/{id} endpoints."""
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-
 from app.main import app
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.mark.asyncio

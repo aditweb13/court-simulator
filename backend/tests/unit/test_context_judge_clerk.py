@@ -9,10 +9,6 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-
 from app.context.clerk import build_clerk_context, build_clerk_opening_prompt
 from app.context.judge import (
     build_judge_closing_prompt,
@@ -23,6 +19,9 @@ from app.db.models.case import Case
 from app.db.session import async_session_maker
 from app.main import app
 from app.rag.retriever import RetrievedChunk
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 
 @pytest.fixture

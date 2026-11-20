@@ -1,7 +1,6 @@
 """Unit tests for pure rules engine functions: turn order, objections, and admissibility."""
 
 import pytest
-
 from app.rules import (
     DEFAULT_OBJECTION_QUOTA_PER_EXAM,
     check_objection_quota,

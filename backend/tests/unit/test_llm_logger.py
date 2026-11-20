@@ -4,7 +4,6 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from app.db.models.llm_call import LLMCall
 from app.llm.logger import record_llm_call
 

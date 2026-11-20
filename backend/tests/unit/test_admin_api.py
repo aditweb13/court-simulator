@@ -6,14 +6,13 @@ import uuid
 from typing import Any
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-
 from app.api.deps import get_current_user
 from app.db.models.llm_call import LLMCall
 from app.db.models.user import User
 from app.db.session import async_session_maker, get_db
 from app.llm.chains import pool_registry
 from app.main import app
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture

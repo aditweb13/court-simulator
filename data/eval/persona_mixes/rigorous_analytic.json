@@ -1,0 +1,49 @@
+{
+  "name": "rigorous_analytic",
+  "description": "Panel concentrated in analytical, technical, and evidentiary evaluation disciplines.",
+  "personas": [
+    {
+      "juror_no": 1,
+      "occupation": "Forensic Auditor",
+      "reasoning_style": "forensic",
+      "traits": "Requires chain of custody documentation and mathematical corroboration."
+    },
+    {
+      "juror_no": 2,
+      "occupation": "Laboratory Research Scientist",
+      "reasoning_style": "empirical",
+      "traits": "Tests each assertion as a falsifiable hypothesis against admitted exhibits."
+    },
+    {
+      "juror_no": 3,
+      "occupation": "Software Quality Assurance Lead",
+      "reasoning_style": "systematic",
+      "traits": "Actively searches for edge-case contradictions in testimony."
+    },
+    {
+      "juror_no": 4,
+      "occupation": "Actuarial Statistician",
+      "reasoning_style": "probabilistic",
+      "traits": "Calculates probabilistic thresholds and discounts coincidental inferences."
+    },
+    {
+      "juror_no": 5,
+      "occupation": "Structural Systems Engineer",
+      "reasoning_style": "analytical",
+      "traits": "Demands stress-tested proof before accepting prosecution causality."
+    },
+    {
+      "juror_no": 6,
+      "occupation": "University Mathematics Lecturer",
+      "reasoning_style": "deductive",
+      "traits": "Evaluates logical validity of counsel deductions from primary premises."
+    },
+    {
+      "juror_no": 7,
+      "occupation": "Legal Records Indexer",
+      "reasoning_style": "evidentiary",
+      "traits": "Categorizes facts strictly into proven, disproven, and uncorroborated."
+    }
+  ]
+}
+

@@ -7,10 +7,6 @@ import json
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
-from pydantic import ValidationError
-from sqlalchemy import select
-
 from app.core.security import decode_access_token
 from app.db.models.trial import Trial
 from app.db.session import async_session_maker
@@ -24,6 +20,9 @@ from app.ws.schemas import (
     ObjectEvent,
     StateEvent,
 )
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
+from pydantic import ValidationError
+from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 

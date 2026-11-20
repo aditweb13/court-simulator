@@ -13,8 +13,6 @@ from __future__ import annotations
 import uuid
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-
 from app.context.juror import (
     build_juror_context,
     build_juror_deliberation_prompt,
@@ -28,6 +26,7 @@ from app.db.models.case import Case
 from app.db.models.trial import Turn
 from app.db.session import async_session_maker
 from app.main import app
+from httpx import ASGITransport, AsyncClient
 
 
 @pytest.fixture

@@ -9,9 +9,8 @@ Create Date: 2026-11-18
 from typing import Sequence, Union
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
-
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "004_cases_evidence_witnesses"
 down_revision: Union[str, None] = "003_knowledge_chunks"
