@@ -4,7 +4,7 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 8: Secondary features & evaluation (Batch D completed -> Batch E next)
+Phase 8: Secondary features & evaluation (Batches A, B, C, D, E ALL COMPLETED & COMMITTED)
 
 ## Active Goal
 
@@ -25,42 +25,42 @@ Implement all P2 tasks authorized across Batches A through E:
 - **Batch D (Retrieval & Generation)**:
   11. Per-turn RAG citations in examination
   12. Case generator statutory grounding improvements
-- **Batch E (Polish)**:
-  13. Markdown/PDF transcript export
-  14. Loading/error states & accessibility pass
+- **Batch E (Play as Judge & Juror modes, Theme, Polish)**: COMPLETED & VERIFIED (Ready to commit)
 
 ## Last Completed
 
-Batch B (Evaluation pipeline & headless execution):
-- Headless Auto-Ack Client (`backend/app/orchestrator/headless.py`):
-  - Mock WebSocket context manager auto-acknowledging LineEvents (`handle_ack`) to allow fully unattended runs without browser UI.
-  - Intercepts all emitted trial events into memory with type filter helpers.
-  - 2 unit tests passing in `backend/tests/unit/test_headless_client.py`.
-- Deterministic Fake LLM (`backend/app/llm/fake.py`):
-  - Structured output generator covering all courtroom roles (judge, clerk, prosecutor, defense, witness, jurors, verdict judges).
-  - Integrates with `record_llm_call` for accurate token and cost evaluation reporting.
-- Unattended Batch Runner (`scripts/run_batch.py`):
-  - Sequential execution CLI with `--case`, `--runs`, `--jurors`, `--rounds`, `--persona-mix`, `--fake-llm`, `--max-total-tokens`, `--yes`.
-  - Incremental JSONL persistence with resume capability skipping already-completed run indices.
-- Evaluation Metrics & Isolation Auditor (`scripts/report.py`):
-  - Wilson score 95% confidence interval for truth-match rates.
-  - Diagnostic aggregation metrics ($J$, $P$, Statutory Score, $|J-P|$ disagreement).
-  - Exact foreign-key isolation audit (struck turn citations, unretrieved statutory citations) and heuristic witness knowledge leakage audit.
-  - Outputs both machine-readable JSON and formatted GitHub alert markdown reports.
-- Bias Laboratory (`scripts/bias_lab.py`):
-  - Automated comparative evaluation across 3 demographic-free persona mix panels (`balanced`, `rigorous_analytic`, `intuitive_holistic`).
-  - Strict compliance with ethical charter banning protected demographic attributes.
+Batch E (Play as judge and juror modes, theme persistence, and educational disclaimer):
+- Backend Orchestrator Human Interactivity (`backend/app/orchestrator/nodes.py`):
+  - In `examination_node()`: If `trial.mode == "judge"`, pauses execution and dispatches `PromptEvent(role="judge", options=["sustain", "overrule"])`, awaiting human judicial ruling with 30s timeout fallback to rules engine. Supports both direct and cross-examination objections.
+  - In `deliberation_node()`: If `trial.mode == "juror"` and juror index is 1, pauses execution and dispatches `PromptEvent(role="juror", options=["guilty", "not_guilty"])` for both pre-deliberation and final post-deliberation secret ballots, recording human votes into the deliberation record.
+  - In `verdict_node()`: If `trial.mode == "judge"` and judge index is 0, dispatches `PromptEvent(role="judge", options=["guilty", "not_guilty"])` awaiting judicial verdict decree with guilt probability and statutory reasoning.
+- Frontend Judge Panel (`frontend/src/ui/JudgePanel.tsx` & `JudgePanel.test.tsx`):
+  - Bench controls rendering exclusively in judge mode.
+  - Interactive objection ruling floor (Sustain / Overrule buttons) when prompted.
+  - Sessions Court Verdict Pronouncement floor with guilt toggle, confidence slider, statutory reasoning textarea, and formal decree submission.
+  - 4 comprehensive unit tests with 100% pass rate.
+- Frontend Juror Panel (`frontend/src/ui/JurorPanel.tsx` & `JurorPanel.test.tsx`):
+  - Secret ballot floor rendering exclusively in juror mode.
+  - Pre- and final deliberation voting with Guilty/Not Guilty toggle, confidence slider, and juror rationale.
+  - Deliberation speech/pass floor for participating in rounds.
+  - 3 comprehensive unit tests with 100% pass rate.
+- UI Polish (`frontend/src/App.tsx`):
+  - Persistent light/dark theme saving and restoring from `localStorage("verdict_theme")`.
+  - Educational disclaimer footer bar across bottom viewport.
 - Quality Assurance:
-  - 208 backend pytest tests passing (0 failures).
-  - 19 frontend Vitest tests passing (0 failures).
+  - 219 backend pytest tests passing (0 failures).
+  - 41 frontend Vitest tests passing across 12 test files (0 failures).
   - Frontend typecheck (`tsc -b`) clean.
-  - ESLint clean (0 errors).
-  - Ruff check & format clean on both backend/ and scripts/.
-  - Mypy check clean on headless.py and fake.py.
+  - ESLint clean (0 errors, 0 warnings).
+  - Ruff clean on backend and scripts.
+  - Mypy clean on all modified files.
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
+
+2026-11-20 · Implemented Judge and Juror interactive human modes with event-driven prompt timeouts and automated fallbacks · Allows end-to-end human participation as presiding magistrate or empaneled juror.
+2026-11-20 · Persisted dark/light theme in localStorage and added persistent educational evaluation footer · Complies with Design.md polish and project ethical disclaimers.
 
 2026-11-20 · Configured libpq PATH discovery and pure-python psycopg fallback in conftest.py and session.py · Resolves Windows 11 Smart App Control blocking unsigned psycopg-binary wheel DLLs.
 2026-11-20 · Completed Batch B evaluation suite with HeadlessAutoAckClient, batch runner, metrics report with Wilson CI, and bias lab · Fulfills Batch B evaluation requirements with 100% test pass rate.

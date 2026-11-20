@@ -52,6 +52,7 @@ from app.context.witness import build_witness_answer_prompt, build_witness_conte
 from app.db.models.case import Case
 from app.db.models.trial import Agent, Trial, Turn, TurnEmbedding, Verdict, Vote
 from app.llm.router import chat
+from app.orchestrator.human_input import wait_for_human_action
 from app.orchestrator.schemas import (
     ClerkAnnouncementOutput,
     ClosingArgumentOutput,
@@ -74,7 +75,7 @@ from app.rules import (
 )
 from app.voting import aggregate_verdict, calculate_bns_sentence_range
 from app.ws.connection import manager as ws_manager
-from app.ws.schemas import LineEvent, RulingEvent, StateEvent, VerdictEvent
+from app.ws.schemas import LineEvent, PromptEvent, RulingEvent, StateEvent, VerdictEvent
 
 logger = logging.getLogger("app.orchestrator")
 
@@ -502,6 +503,8 @@ async def examination_node(
     seq = state["turn_seq"]
     logger.info("examination_node: trial %s, starting at seq %d", trial_id, seq)
 
+    trial = await db.get(Trial, trial_id)
+
     # 1. Load case with witnesses and evidence
     case_stmt = (
         select(Case)
@@ -630,8 +633,19 @@ async def examination_node(
 
             # --- JUDGE RULES ON OBJECTION ---
             is_valid = is_valid_objection_ground(objection_ground)
-            # Under Indian Law, leading questions on direct are strictly sustained
-            if objection_ground == "leading" and not is_leading_question_permitted("direct"):
+            if trial and trial.mode == "judge":
+                await ws_manager.send_event(
+                    trial_id,
+                    PromptEvent(role="judge", options=["sustain", "overrule"]),
+                )
+                human_action = await wait_for_human_action(trial_id, timeout=30.0)
+                if human_action and human_action.get("action") in ("sustain", "overrule"):
+                    objection_sustained = (human_action.get("action") == "sustain")
+                elif objection_ground == "leading" and not is_leading_question_permitted("direct"):
+                    objection_sustained = True
+                else:
+                    objection_sustained = is_valid
+            elif objection_ground == "leading" and not is_leading_question_permitted("direct"):
                 objection_sustained = True
             elif is_valid:
                 objection_sustained = True
@@ -833,7 +847,19 @@ async def examination_node(
                 )
 
             # Judge rules on prosecution objection
-            if objection_ground == "leading" and is_leading_question_permitted("cross"):
+            if trial and trial.mode == "judge":
+                await ws_manager.send_event(
+                    trial_id,
+                    PromptEvent(role="judge", options=["sustain", "overrule"]),
+                )
+                human_action = await wait_for_human_action(trial_id, timeout=30.0)
+                if human_action and human_action.get("action") in ("sustain", "overrule"):
+                    objection_sustained = (human_action.get("action") == "sustain")
+                elif objection_ground == "leading" and is_leading_question_permitted("cross"):
+                    objection_sustained = False
+                else:
+                    objection_sustained = is_valid_objection_ground(objection_ground)
+            elif objection_ground == "leading" and is_leading_question_permitted("cross"):
                 objection_sustained = False
             elif is_valid_objection_ground(objection_ground):
                 objection_sustained = True
@@ -1418,6 +1444,32 @@ async def deliberation_node(
     logger.info("deliberation_node: collecting pre-deliberation votes for %d jurors", len(jurors))
 
     async def _cast_pre_vote(ja: Agent, j_no: int) -> tuple[Vote, JurorVoteOutput]:
+        if trial and trial.mode == "juror" and j_no == 1:
+            await ws_manager.send_event(
+                trial_id,
+                PromptEvent(role="juror", options=["guilty", "not_guilty"]),
+            )
+            human_action = await wait_for_human_action(trial_id, timeout=30.0)
+            if human_action and "guilty" in human_action:
+                h_vote_out = JurorVoteOutput(
+                    guilty=bool(human_action.get("guilty")),
+                    guilt_probability=float(human_action.get("guilt_probability", 0.5)),
+                    confidence=float(human_action.get("confidence", 0.8)),
+                    reasoning=str(human_action.get("reasoning", "Juror assessment")),
+                    cited_turn_seqs=[],
+                )
+                vote_row = Vote(
+                    trial_id=trial_id,
+                    agent_id=ja.id,
+                    kind="juror_pre",
+                    guilty=h_vote_out.guilty,
+                    guilt_probability=round(h_vote_out.guilt_probability, 3),
+                    confidence=round(h_vote_out.confidence, 3),
+                    reasoning=h_vote_out.reasoning,
+                    cited_turn_ids=[],
+                )
+                return vote_row, h_vote_out
+
         ctx = await build_juror_context(db, trial_id, case_id, juror_no=j_no)
         messages = build_juror_vote_prompt(ctx, stage="pre")
         vote_out: JurorVoteOutput = await chat(
@@ -1543,6 +1595,24 @@ async def deliberation_node(
     logger.info("deliberation_node: collecting final post-deliberation votes")
 
     async def _cast_final_vote(ja: Agent, j_no: int) -> Vote:
+        if trial and trial.mode == "juror" and j_no == 1:
+            await ws_manager.send_event(
+                trial_id,
+                PromptEvent(role="juror", options=["guilty", "not_guilty"]),
+            )
+            human_action = await wait_for_human_action(trial_id, timeout=30.0)
+            if human_action and "guilty" in human_action:
+                return Vote(
+                    trial_id=trial_id,
+                    agent_id=ja.id,
+                    kind="juror_final",
+                    guilty=bool(human_action.get("guilty")),
+                    guilt_probability=round(float(human_action.get("guilt_probability", 0.5)), 3),
+                    confidence=round(float(human_action.get("confidence", 0.8)), 3),
+                    reasoning=str(human_action.get("reasoning", "Final juror assessment")),
+                    cited_turn_ids=[],
+                )
+
         ctx = await build_juror_context(db, trial_id, case_id, juror_no=j_no)
         messages = build_juror_vote_prompt(ctx, stage="final")
         vote_out: JurorVoteOutput = await chat(
@@ -1635,7 +1705,26 @@ async def verdict_node(
 
     philosophies = ["textualist", "precedent", "fairness"]
 
-    async def _evaluate_judge(ja: Agent, phil: str) -> Vote:
+    async def _evaluate_judge(ja: Agent, phil: str, idx: int = 0) -> Vote:
+        if trial and trial.mode == "judge" and idx == 0:
+            await ws_manager.send_event(
+                trial_id,
+                PromptEvent(role="judge", options=["guilty", "not_guilty"]),
+            )
+            human_action = await wait_for_human_action(trial_id, timeout=30.0)
+            if human_action and "guilty" in human_action:
+                return Vote(
+                    trial_id=trial_id,
+                    agent_id=ja.id,
+                    kind="judge",
+                    guilty=bool(human_action.get("guilty")),
+                    guilt_probability=round(float(human_action.get("guilt_probability", 0.8)), 3),
+                    confidence=round(float(human_action.get("confidence", 0.9)), 3),
+                    reasoning=str(
+                        human_action.get("reasoning", "Presiding judicial ruling")
+                    ),
+                )
+
         ctx = await build_verdict_judge_context(db, trial_id, case_id, philosophy=phil)
         messages = build_verdict_judge_prompt(ctx)
         v_out: JudgeVerdictOutput = await chat(
@@ -1656,7 +1745,7 @@ async def verdict_node(
         )
 
     judge_tasks = [
-        _evaluate_judge(ja, ja.persona.get("philosophy", philosophies[idx % 3]))
+        _evaluate_judge(ja, ja.persona.get("philosophy", philosophies[idx % 3]), idx=idx)
         for idx, ja in enumerate(v_judge_agents)
     ]
     judge_vote_rows: List[Vote] = []

@@ -6,11 +6,19 @@ import { Transcript } from "./ui/Transcript";
 import { VerdictScreen } from "./ui/VerdictScreen";
 import { AdminPage } from "./ui/AdminPage";
 import { LawyerPanel } from "./ui/LawyerPanel";
+import { JudgePanel } from "./ui/JudgePanel";
+import { JurorPanel } from "./ui/JurorPanel";
 import { ReplayControls } from "./ui/ReplayControls";
 import { useTrialStore } from "./store/trialStore";
 
 export default function App() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("verdict_theme");
+      if (stored === "dark" || stored === "light") return stored;
+    }
+    return "light";
+  });
   const [route, setRoute] = useState<string>(
     typeof window !== "undefined" && window.location.pathname.startsWith("/admin")
       ? "/admin"
@@ -21,6 +29,10 @@ export default function App() {
   const ttsEnabled = useTrialStore((state) => state.ttsEnabled);
   const setTTSEnabled = useTrialStore((state) => state.setTTSEnabled);
   const [showReplay, setShowReplay] = useState<boolean>(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     const onPopState = () => {
@@ -38,6 +50,9 @@ export default function App() {
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("verdict_theme", next);
+    }
     document.documentElement.setAttribute("data-theme", next);
   };
 
@@ -190,14 +205,27 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Column: Official Transcript Stream & Interactive Lawyer Panel */}
+          {/* Right Column: Official Transcript Stream & Interactive Panels */}
           <div className="lg:col-span-8 flex flex-col gap-4">
             <Transcript className="h-[460px]" />
             <LawyerPanel />
+            <JudgePanel />
+            <JurorPanel />
           </div>
         </section>
       </main>
       )}
+
+      {/* Educational Legal Disclaimer Footer */}
+      <footer className="border-t border-[var(--border)] px-6 py-3 bg-[var(--surface)] text-[11px] text-[var(--text-secondary)] flex flex-col sm:flex-row items-center justify-between gap-2">
+        <span>
+          ⚖ Verdict BNS Simulator is an autonomous multi-agent courtroom research system for educational evaluation under BNS, BNSS & BSA 2023. Not legal advice.
+        </span>
+        <div className="flex gap-4">
+          <span>Coram: Sessions Court</span>
+          <span>Version: 1.0 (BNS 2023 Edition)</span>
+        </div>
+      </footer>
 
       <VerdictScreen />
     </div>

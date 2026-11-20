@@ -86,8 +86,8 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P8] Human lawyer mode: prompt events and typed questions
 - [x] [P8] Objection button with keyboard shortcut and quota display
 - [x] [P8] Objection window for human lawyer mode
-- [ ] [P8] Play as judge mode
-- [ ] [P8] Play as juror mode
+- [x] [P8] Play as judge mode
+- [x] [P8] Play as juror mode
 
 ## P3: nice-to-have and polish
 
