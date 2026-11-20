@@ -9,6 +9,7 @@ import { LawyerPanel } from "./ui/LawyerPanel";
 import { JudgePanel } from "./ui/JudgePanel";
 import { JurorPanel } from "./ui/JurorPanel";
 import { ReplayControls } from "./ui/ReplayControls";
+import { DisclaimerModal } from "./ui/DisclaimerModal";
 import { useTrialStore } from "./store/trialStore";
 
 export default function App() {
@@ -28,7 +29,10 @@ export default function App() {
   const status = useTrialStore((state) => state.status);
   const ttsEnabled = useTrialStore((state) => state.ttsEnabled);
   const setTTSEnabled = useTrialStore((state) => state.setTTSEnabled);
+  const sfxEnabled = useTrialStore((state) => state.sfxEnabled);
+  const setSFXEnabled = useTrialStore((state) => state.setSFXEnabled);
   const [showReplay, setShowReplay] = useState<boolean>(false);
+  const [showDisclaimer, setShowDisclaimer] = useState<boolean>(false);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -107,6 +111,20 @@ export default function App() {
             title="Toggle Text-to-Speech Courtroom Dialogue"
           >
             {ttsEnabled ? "🔊 Voice: ON" : "🔈 Voice: OFF"}
+          </button>
+
+          <button
+            onClick={() => setSFXEnabled(!sfxEnabled)}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium rounded-[var(--radius-md)] border transition-colors cursor-pointer",
+              sfxEnabled
+                ? "bg-[var(--primary)] text-white border-transparent"
+                : "border-[var(--border)] hover:bg-black/5 dark:hover:bg-white/5",
+            )}
+            aria-label={sfxEnabled ? "Mute sound effects" : "Enable sound effects"}
+            title="Toggle Gavel & Courtroom Sound Effects"
+          >
+            {sfxEnabled ? "🔔 SFX: ON" : "🔕 SFX: OFF"}
           </button>
 
           <button
@@ -218,9 +236,17 @@ export default function App() {
 
       {/* Educational Legal Disclaimer Footer */}
       <footer className="border-t border-[var(--border)] px-6 py-3 bg-[var(--surface)] text-[11px] text-[var(--text-secondary)] flex flex-col sm:flex-row items-center justify-between gap-2">
-        <span>
-          ⚖ Verdict BNS Simulator is an autonomous multi-agent courtroom research system for educational evaluation under BNS, BNSS & BSA 2023. Not legal advice.
-        </span>
+        <div className="flex items-center gap-2">
+          <span>
+            ⚖ Verdict BNS Simulator is an autonomous multi-agent courtroom research system for educational evaluation under BNS, BNSS & BSA 2023. Not legal advice.
+          </span>
+          <button
+            onClick={() => setShowDisclaimer(true)}
+            className="underline font-semibold text-[var(--primary)] hover:brightness-110 cursor-pointer ml-1"
+          >
+            Legal Notice & Ethics Charter
+          </button>
+        </div>
         <div className="flex gap-4">
           <span>Coram: Sessions Court</span>
           <span>Version: 1.0 (BNS 2023 Edition)</span>
@@ -228,6 +254,7 @@ export default function App() {
       </footer>
 
       <VerdictScreen />
+      <DisclaimerModal isOpen={showDisclaimer} onClose={() => setShowDisclaimer(false)} />
     </div>
   );
 }

@@ -24,6 +24,7 @@ from sqlalchemy.orm import selectinload
 from app.db.models.case import Case
 from app.db.models.trial import Agent, Turn
 from app.rag.retriever import retrieve
+from app.verdict.philosophies import format_philosophy_prompt_guidance
 
 logger = logging.getLogger("app.context.verdict_judge")
 
@@ -119,30 +120,10 @@ def build_verdict_judge_prompt(
     philosophy = judge_info.get("philosophy", "textualist")
     orientation = judge_info.get("orientation", "Statutory analysis")
 
-    philosophy_guidance = {
-        "textualist": (
-            "You are a Textualist Judge. Apply the exact text of the Bharatiya Nyaya Sanhita, 2023 "
-            "and Bharatiya Sakshya Adhiniyam, 2023. Refuse judicial activism. Every statutory "
-            "element of the offense must be strictly proven by admitted evidence beyond doubt."
-        ),
-        "precedent": (
-            "You are a Precedent-Oriented Judge. Emphasize established judicial doctrines, "
-            "landmark Supreme Court ratios on circumstantial evidence (such as the Panchsheel "
-            "principles in Sharad Birdhichand Sarda), and consistency in the standard of proof."
-        ),
-        "fairness": (
-            "You are an Equity and Constitutional Fairness Judge. Emphasize substantive justice, "
-            "fair trial guarantees under Articles 20 and 21 of the Constitution of India, "
-            "protection against wrongful conviction, and the presumption of innocence."
-        ),
-    }.get(
-        philosophy,
-        "Apply standard Indian criminal jurisprudence and burden of proof.",
-    )
+    philosophy_guidance = format_philosophy_prompt_guidance(philosophy)
 
     system_prompt = (
         f"You are a Learned Sessions Judge on the Verdict Bench in an Indian criminal trial.\n"
-        f"Judicial Philosophy: {philosophy.upper()}\n"
         f"Orientation: {orientation}\n\n"
         f"{philosophy_guidance}\n\n"
         "You must base your ruling SOLELY on the admitted record and evidence. Struck turns have "

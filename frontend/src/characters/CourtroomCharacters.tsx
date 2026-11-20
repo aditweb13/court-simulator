@@ -9,12 +9,31 @@ export function CourtroomCharacters({
   activeSpeaker = null,
   activeAction = null,
 }: CourtroomCharactersProps) {
+  const isDramaticMoment = activeAction === "object" || activeAction === "point";
+
+  const getJudgePose = (): CharacterPose => {
+    if (activeSpeaker?.toLowerCase() === "judge") {
+      if (activeAction === "gavel") return "gavel";
+      return "talk";
+    }
+    return "sit";
+  };
+
   const getPose = (role: string, defaultPose: CharacterPose = "sit"): CharacterPose => {
     if (activeSpeaker?.toLowerCase() === role.toLowerCase()) {
       if (activeAction === "point") return "point";
       return "talk";
     }
+    if (isDramaticMoment && role === "defendant") return "react";
     return defaultPose;
+  };
+
+  const getJurorPose = (jurorIdx: number): CharacterPose => {
+    if (activeSpeaker?.toLowerCase() === "juror") return "talk";
+    if (isDramaticMoment && (jurorIdx === 1 || jurorIdx === 3 || jurorIdx === 5)) {
+      return "react";
+    }
+    return "sit";
   };
 
   const isStandingSpeaker = (role: string): boolean => {
@@ -32,7 +51,7 @@ export function CourtroomCharacters({
         role="judge"
         position={[0, 0.8, -6.7]}
         rotation={[0, 0, 0]}
-        state={getPose("judge", "sit")}
+        state={getJudgePose()}
         robe={true}
         hairColor="#E0DDD7"
         skinTone="#C69567"
@@ -117,7 +136,7 @@ export function CourtroomCharacters({
         role="juror"
         position={[6.4, 0.2, -2.5]}
         rotation={[0, -Math.PI / 2, 0]}
-        state="sit"
+        state={getJurorPose(1)}
         jacketColor="#3B342C"
         skinTone="#C89768"
       />
@@ -126,7 +145,7 @@ export function CourtroomCharacters({
         role="juror"
         position={[7.2, 0.2, -2.5]}
         rotation={[0, -Math.PI / 2, 0]}
-        state="sit"
+        state={getJurorPose(2)}
         jacketColor="#273238"
         skinTone="#D4A373"
       />
@@ -135,7 +154,7 @@ export function CourtroomCharacters({
         role="juror"
         position={[8.0, 0.2, -2.5]}
         rotation={[0, -Math.PI / 2, 0]}
-        state="sit"
+        state={getJurorPose(3)}
         jacketColor="#4B3F38"
         skinTone="#B07D4F"
       />
@@ -146,7 +165,7 @@ export function CourtroomCharacters({
         role="juror"
         position={[6.2, 0.5, -4.0]}
         rotation={[0, -Math.PI / 2, 0]}
-        state="sit"
+        state={getJurorPose(4)}
         jacketColor="#2B363B"
         skinTone="#BE8B5C"
       />
@@ -155,7 +174,7 @@ export function CourtroomCharacters({
         role="juror"
         position={[7.0, 0.5, -4.0]}
         rotation={[0, -Math.PI / 2, 0]}
-        state="sit"
+        state={getJurorPose(5)}
         jacketColor="#443B33"
         skinTone="#D9AC7E"
       />
@@ -164,7 +183,7 @@ export function CourtroomCharacters({
         role="juror"
         position={[7.8, 0.5, -4.0]}
         rotation={[0, -Math.PI / 2, 0]}
-        state="sit"
+        state={getJurorPose(6)}
         jacketColor="#2F3B3F"
         skinTone="#AE7B4E"
       />
@@ -173,11 +192,10 @@ export function CourtroomCharacters({
         role="juror"
         position={[8.6, 0.5, -4.0]}
         rotation={[0, -Math.PI / 2, 0]}
-        state="sit"
+        state={getJurorPose(7)}
         jacketColor="#3E3832"
         skinTone="#C59466"
       />
     </group>
   );
 }
-

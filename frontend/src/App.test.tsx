@@ -60,4 +60,20 @@ describe("App Component", () => {
     expect(screen.getByRole("button", { name: /Switch to dark theme/i })).toBeInTheDocument();
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
+
+  it("toggles SFX button and opens disclaimer modal", async () => {
+    await act(async () => {
+      render(<App />);
+    });
+
+    const sfxBtn = screen.getByRole("button", { name: /Mute sound effects/i });
+    expect(sfxBtn).toBeInTheDocument();
+    fireEvent.click(sfxBtn);
+    expect(screen.getByRole("button", { name: /Enable sound effects/i })).toBeInTheDocument();
+
+    const disclaimerBtn = screen.getByRole("button", { name: /Legal Notice & Ethics Charter/i });
+    expect(disclaimerBtn).toBeInTheDocument();
+    fireEvent.click(disclaimerBtn);
+    expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+  });
 });

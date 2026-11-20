@@ -3,6 +3,8 @@
  * Separates the formal court well from public seating.
  */
 
+import { Character } from "../characters/Character";
+
 const WOOD_RAIL = "#4A2E18";
 const WOOD_BENCH = "#5A381E";
 
@@ -92,7 +94,52 @@ export function Gallery() {
       {/* Row 2 */}
       <WoodenPew position={[-3.4, 0, 5.4]} width={4.2} />
       <WoodenPew position={[3.4, 0, 5.4]} width={4.2} />
+
+      {/* 3. Seated Public Gallery Spectators */}
+      <Character
+        name="Gallery 1"
+        role="spectator"
+        position={[-3.0, 0, 3.8]}
+        rotation={[0, 0, 0]}
+        state="sit"
+        jacketColor="#3F3731"
+        shirtColor="#DCD4C7"
+        skinTone="#C08D5E"
+        scale={0.95}
+      />
+      <Character
+        name="Gallery 2"
+        role="spectator"
+        position={[3.2, 0, 3.8]}
+        rotation={[0, 0, 0]}
+        state="sit"
+        jacketColor="#2F383D"
+        shirtColor="#F0EBE1"
+        skinTone="#D4A373"
+        scale={0.95}
+      />
+      <Character
+        name="Gallery 3"
+        role="spectator"
+        position={[-4.2, 0, 5.4]}
+        rotation={[0, 0, 0]}
+        state="sit"
+        jacketColor="#382E2B"
+        shirtColor="#E3DFD5"
+        skinTone="#B37D50"
+        scale={0.95}
+      />
+      <Character
+        name="Gallery 4"
+        role="spectator"
+        position={[4.0, 0, 5.4]}
+        rotation={[0, 0, 0]}
+        state="sit"
+        jacketColor="#32353B"
+        shirtColor="#ECE6DA"
+        skinTone="#C89768"
+        scale={0.95}
+      />
     </group>
   );
 }
-

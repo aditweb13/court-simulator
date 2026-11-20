@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { LineEvent, PromptEvent, RulingEvent, ServerEvent, VerdictEvent } from "../events/schemas";
 import { getShotForSpeaker, ShotName } from "../camera/shots";
 import { browserTTS } from "../audio/tts";
+import { courtroomSFX } from "../audio/sfx";
 
 export type TrialStatus =
   | "idle"
@@ -36,6 +37,7 @@ export interface TrialState {
   objectionQuota: number;
   pendingPrompt: PromptEvent | null;
   ttsEnabled: boolean;
+  sfxEnabled: boolean;
 
   // Actions
   setTrialId: (trialId: string | null) => void;
@@ -48,6 +50,7 @@ export interface TrialState {
   setIsHumanTurn: (val: boolean) => void;
   decrementObjectionQuota: () => void;
   setTTSEnabled: (enabled: boolean) => void;
+  setSFXEnabled: (enabled: boolean) => void;
   handleServerEvent: (
     event: ServerEvent,
     sendAck?: (seq: number) => void,
@@ -79,6 +82,7 @@ export const useTrialStore = create<TrialState>((set, get) => ({
   objectionQuota: 3,
   pendingPrompt: null,
   ttsEnabled: false,
+  sfxEnabled: true,
 
   setTrialId: (trialId) => set({ trialId }),
   setCaseId: (caseId) => set({ caseId }),
@@ -93,6 +97,10 @@ export const useTrialStore = create<TrialState>((set, get) => ({
   setTTSEnabled: (enabled) => {
     browserTTS.setEnabled(enabled);
     set({ ttsEnabled: enabled });
+  },
+  setSFXEnabled: (enabled) => {
+    courtroomSFX.setEnabled(enabled);
+    set({ sfxEnabled: enabled });
   },
 
   handleServerEvent: (event: ServerEvent, sendAck?: (seq: number) => void) => {
@@ -141,6 +149,9 @@ export const useTrialStore = create<TrialState>((set, get) => ({
       }
 
       case "ruling": {
+        if (get().sfxEnabled) {
+          courtroomSFX.playGavel();
+        }
         set((state) => ({
           transcript: [...state.transcript, event],
         }));
@@ -148,6 +159,9 @@ export const useTrialStore = create<TrialState>((set, get) => ({
       }
 
       case "verdict": {
+        if (get().sfxEnabled) {
+          courtroomSFX.playGavel();
+        }
         set({
           verdict: event,
           status: "completed",
@@ -222,6 +236,7 @@ export const useTrialStore = create<TrialState>((set, get) => ({
 
   reset: () => {
     browserTTS.cancel();
+    courtroomSFX.stopMurmur();
     set({
       trialId: null,
       caseId: null,

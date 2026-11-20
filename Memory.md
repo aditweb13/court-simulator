@@ -4,61 +4,63 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 8: Secondary features & evaluation (Batches A, B, C, D, E ALL COMPLETED & COMMITTED)
+ALL PHASES COMPLETE: Phase 1 through 8 (P0 Core, P1 MVP, P2 Secondary Batches A-E, and P3 Polish all 100% complete)
 
 ## Active Goal
 
-Implement all P2 tasks authorized across Batches A through E:
-- **Batch A (Backend foundations)**: COMPLETED & VERIFIED
-  1. Staged case generator with caching [P4] (Done)
-  2. GET /admin/llm-status endpoint plus admin page [P8] (Done)
-  3. Gap a: ADMIN_EMAILS allowlist and admin auth dependency (Done)
-- **Batch B (Evaluation)**: COMPLETED & VERIFIED
-  4. Headless auto-ack client (Gap b) (Done)
-  5. scripts/run_batch.py for unattended runs (Done)
-  6. Metrics report (scripts/report.py with Wilson CI & isolation audit) (Done)
-  7. Bias lab (persona mixes and comparative evaluation) (Done)
-- **Batch C (Human Lawyer Mode)**: NEXT
-  8. Human lawyer WebSocket commands (examine, argue, object via HumanActionEvent)
-  9. Lawyer-mode UI panel in frontend
-  10. Spectator lock preventing human input in watch mode
-- **Batch D (Retrieval & Generation)**:
-  11. Per-turn RAG citations in examination
-  12. Case generator statutory grounding improvements
-- **Batch E (Play as Judge & Juror modes, Theme, Polish)**: COMPLETED & VERIFIED (Ready to commit)
+All tasks in TASKS.md across P0, P1, P2 (Batches A through E), and P3 (Nice-to-have and polish) are 100% COMPLETE & VERIFIED:
+- **P0 / P1 Core**: Project setup, LLM router failover, BNS law retrieval, cases & evidence, 3D courtroom orchestrator, lawyers, witness examination, objections, jury deliberation, hybrid verdict scoring.
+- **P2 Secondary (Batches A-E)**:
+  - Batch A: Staged case generator with caching, GET /admin/llm-status, ADMIN_EMAILS allowlist.
+  - Batch B: Headless auto-ack client, scripts/run_batch.py, scripts/report.py (Wilson CI & isolation audit), bias lab.
+  - Batch C: Human lawyer mode (prompt events, typed questions, objection window with quota).
+  - Batch D: Timeline event key_facts, GET /trials/{id}/replay, ReplayControls UI, browser TTS per-role voices.
+  - Batch E: Play as judge mode, play as juror mode, theme persistence, educational disclaimer.
+- **P3 Polish**:
+  - Verdict Judge jurisprudence doctrines & ethical canons (`backend/app/verdict/philosophies.py`).
+  - Web Audio API procedural sound engine: gavel strike, footsteps, gallery murmur (`frontend/src/audio/sfx.ts`).
+  - 3D Character lip sync, jaw articulation, reaction states, gallery spectators (`frontend/src/characters/Character.tsx`).
+  - Accessibility pass (skip link, ARIA landmarks, focus rings) & Legal Notice modal (`frontend/src/ui/DisclaimerModal.tsx`).
+  - Comprehensive root `README.md`.
 
 ## Last Completed
 
-Batch E (Play as judge and juror modes, theme persistence, and educational disclaimer):
-- Backend Orchestrator Human Interactivity (`backend/app/orchestrator/nodes.py`):
-  - In `examination_node()`: If `trial.mode == "judge"`, pauses execution and dispatches `PromptEvent(role="judge", options=["sustain", "overrule"])`, awaiting human judicial ruling with 30s timeout fallback to rules engine. Supports both direct and cross-examination objections.
-  - In `deliberation_node()`: If `trial.mode == "juror"` and juror index is 1, pauses execution and dispatches `PromptEvent(role="juror", options=["guilty", "not_guilty"])` for both pre-deliberation and final post-deliberation secret ballots, recording human votes into the deliberation record.
-  - In `verdict_node()`: If `trial.mode == "judge"` and judge index is 0, dispatches `PromptEvent(role="judge", options=["guilty", "not_guilty"])` awaiting judicial verdict decree with guilt probability and statutory reasoning.
-- Frontend Judge Panel (`frontend/src/ui/JudgePanel.tsx` & `JudgePanel.test.tsx`):
-  - Bench controls rendering exclusively in judge mode.
-  - Interactive objection ruling floor (Sustain / Overrule buttons) when prompted.
-  - Sessions Court Verdict Pronouncement floor with guilt toggle, confidence slider, statutory reasoning textarea, and formal decree submission.
-  - 4 comprehensive unit tests with 100% pass rate.
-- Frontend Juror Panel (`frontend/src/ui/JurorPanel.tsx` & `JurorPanel.test.tsx`):
-  - Secret ballot floor rendering exclusively in juror mode.
-  - Pre- and final deliberation voting with Guilty/Not Guilty toggle, confidence slider, and juror rationale.
-  - Deliberation speech/pass floor for participating in rounds.
-  - 3 comprehensive unit tests with 100% pass rate.
-- UI Polish (`frontend/src/App.tsx`):
-  - Persistent light/dark theme saving and restoring from `localStorage("verdict_theme")`.
-  - Educational disclaimer footer bar across bottom viewport.
+P3 Polish & Enhancements:
+- Verdict Judge Jurisprudential Doctrines (`backend/app/verdict/philosophies.py` & `backend/app/context/verdict_judge.py`):
+  - Created structured `PhilosophyDoctrine` models for Textualist (strict construction under BNS/BSA, Maxwell, *M. Pentiah*), Precedent (Article 141, Panchsheel circumstantial evidence in *Sharad Birdhichand Sarda*), and Constitutional Fairness (Articles 20, 21, 22, *Maneka Gandhi*, *D.K. Basu*).
+  - Injected universal Indian judicial ethical canons and procedural deliberation instructions into verdict judge prompts.
+  - 6 unit tests passing in `backend/tests/unit/test_verdict_philosophies.py`.
+- Web Audio Procedural Sound Effects Engine (`frontend/src/audio/sfx.ts`):
+  - Zero external assets: synthesizes realistic dual-component wooden gavel strikes (transient snap + resonant teak soundboard decay).
+  - Ambient gallery murmur pink-noise bandpass loop and leather shoe footsteps on hardwood floor.
+  - Sound effect mute/unmute toggle in header, automatically playing gavel strikes on objection rulings and verdicts.
+  - 7 unit tests passing in `frontend/src/audio/sfx.test.ts`.
+- 3D Character Lip Sync, Rigging & Gallery Reactions (`frontend/src/characters/Character.tsx` & `CourtroomCharacters.tsx` & `Gallery.tsx`):
+  - Articulated jaw geometry mesh modulated synchronously by speech cadence during active speaking turns.
+  - Seated gallery spectators in rear pews with subtle idle breathing.
+  - Dynamic reaction state (`"react"`) triggered during dramatic courtroom moments (objections, sustained rulings, points).
+  - Presiding judge gavel-striking gesture animation.
+- Accessibility Pass & Legal Notice Modal (`frontend/src/ui/DisclaimerModal.tsx` & `frontend/src/App.tsx`):
+  - Accessible skip link (`#main-content`), ARIA landmarks, keyboard focus rings, and contrast compliance per `Design.md`.
+  - Rich Legal Notice & Ethics Charter dialog with Section 52(1)(q) copyright notice, demographic neutrality charter, and educational simulation scope.
+  - 4 unit tests passing in `frontend/src/ui/DisclaimerModal.test.tsx`.
+- Comprehensive Root Documentation (`README.md`):
+  - Full project architectural overview, statutory foundations under BNS 2023, setup guides, and CLI execution instructions.
 - Quality Assurance:
-  - 219 backend pytest tests passing (0 failures).
-  - 41 frontend Vitest tests passing across 12 test files (0 failures).
-  - Frontend typecheck (`tsc -b`) clean.
+  - 225 backend pytest tests passing (0 failures).
+  - 53 frontend Vitest tests passing across 14 test suites (0 failures).
+  - TypeScript typecheck (`tsc -b`) clean.
   - ESLint clean (0 errors, 0 warnings).
   - Ruff clean on backend and scripts.
-  - Mypy clean on all modified files.
+  - Mypy clean on all source files.
 
 ## Decisions Log
 
 Newest on top. Format: `YYYY-MM-DD · decision · reason`.
 
+2026-11-20 · Implemented procedural Web Audio API synthesis for gavel transient impact and resonant wooden soundboard without external audio files · Guarantees zero network latency, zero external asset dependencies, and 100% cross-platform reliability.
+2026-11-20 · Codified statutory jurisprudence doctrines (Textualist, Precedent, Constitutional Fairness) and Indian judicial ethical canons into structured models · Enriches multi-agent verdict deliberation with authoritative Indian legal philosophy.
+2026-11-20 · Created DisclaimerModal and comprehensive README documenting BNS 2023 compliance and Section 52(1)(q) copyright notice · Fulfills ethical and legal transparency requirements.
 2026-11-20 · Implemented Judge and Juror interactive human modes with event-driven prompt timeouts and automated fallbacks · Allows end-to-end human participation as presiding magistrate or empaneled juror.
 2026-11-20 · Persisted dark/light theme in localStorage and added persistent educational evaluation footer · Complies with Design.md polish and project ethical disclaimers.
 

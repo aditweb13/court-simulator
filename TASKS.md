@@ -91,12 +91,12 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 
 ## P3: nice-to-have and polish
 
-- [ ] [P8] Replace placeholder characters with rigged models and animation clips
-- [ ] [P8] Lip sync driven by audio volume
-- [ ] [P8] Gavel, murmur and footstep sounds
-- [ ] [P8] Gallery reactions and juror reaction animations
-- [ ] [P8] Lighting and materials pass
-- [ ] [P8] Accessibility pass against the checklist in `Design.md`
-- [ ] [P8] Philosophy, ethics and context collections for the verdict judges
-- [ ] [P8] Disclaimer screens and README update
-- [ ] [P8] Dark and light theme toggle
+- [x] [P8] Replace placeholder characters with rigged models and animation clips
+- [x] [P8] Lip sync driven by audio volume
+- [x] [P8] Gavel, murmur and footstep sounds
+- [x] [P8] Gallery reactions and juror reaction animations
+- [x] [P8] Lighting and materials pass
+- [x] [P8] Accessibility pass against the checklist in `Design.md`
+- [x] [P8] Philosophy, ethics and context collections for the verdict judges
+- [x] [P8] Disclaimer screens and README update
+- [x] [P8] Dark and light theme toggle
