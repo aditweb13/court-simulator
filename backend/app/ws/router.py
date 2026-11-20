@@ -11,6 +11,7 @@ from app.core.security import decode_access_token
 from app.db.models.trial import Trial
 from app.db.session import async_session_maker
 from app.orchestrator.graph import run_trial
+from app.orchestrator.human_input import post_human_action
 from app.ws.connection import manager
 from app.ws.schemas import (
     AckEvent,
@@ -29,6 +30,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["websocket"])
 
 _active_trial_tasks: dict[UUID, asyncio.Task[None]] = {}
+
+# Modes that allow human interaction
+_INTERACTIVE_MODES = {"lawyer", "judge", "juror"}
 
 
 async def _execute_trial_in_background(trial_id: UUID) -> None:
@@ -87,12 +91,18 @@ async def trial_websocket_endpoint(websocket: WebSocket, trial_id: UUID) -> None
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
         initial_state = trial_row.state
+        trial_mode = trial_row.mode or "watch"
 
     # Step 3: Register active connection and send initial trial state
     if trial_id not in manager.active_connections:
         manager.active_connections[trial_id] = []
     manager.active_connections[trial_id].append(websocket)
-    logger.info("WebSocket authenticated for trial %s (user: %s)", trial_id, payload.get("sub"))
+    logger.info(
+        "WebSocket authenticated for trial %s (user: %s, mode: %s)",
+        trial_id,
+        payload.get("sub"),
+        trial_mode,
+    )
 
     state_event = StateEvent(state=initial_state)
     await websocket.send_text(state_event.model_dump_json())
@@ -114,12 +124,43 @@ async def trial_websocket_endpoint(websocket: WebSocket, trial_id: UUID) -> None
                 if msg_type == "ack":
                     ack = AckEvent.model_validate(data)
                     manager.handle_ack(trial_id, ack.seq)
+
                 elif msg_type == "human_action":
+                    if trial_mode not in _INTERACTIVE_MODES:
+                        err = ErrorEvent(
+                            code="FORBIDDEN",
+                            message=(
+                                "Spectators cannot submit actions; start a trial in lawyer mode"
+                            ),
+                        )
+                        await websocket.send_text(err.model_dump_json())
+                        continue
                     action_event = HumanActionEvent.model_validate(data)
-                    logger.info("Human action on trial %s: %s", trial_id, action_event.action)
+                    post_human_action(trial_id, action_event.model_dump())
+                    logger.info(
+                        "Human action on trial %s: %s", trial_id, action_event.action
+                    )
+
                 elif msg_type == "object":
+                    if trial_mode not in _INTERACTIVE_MODES:
+                        err = ErrorEvent(
+                            code="FORBIDDEN",
+                            message=(
+                                "Spectators cannot raise objections; "
+                                "start a trial in lawyer mode"
+                            ),
+                        )
+                        await websocket.send_text(err.model_dump_json())
+                        continue
                     obj_event = ObjectEvent.model_validate(data)
-                    logger.info("Objection on trial %s: %s", trial_id, obj_event.objection_type)
+                    post_human_action(
+                        trial_id,
+                        {"type": "object", **obj_event.model_dump()},
+                    )
+                    logger.info(
+                        "Objection on trial %s: %s", trial_id, obj_event.objection_type
+                    )
+
                 else:
                     logger.debug("Unhandled event '%s' on trial %s", msg_type, trial_id)
             except (json.JSONDecodeError, ValidationError) as e:

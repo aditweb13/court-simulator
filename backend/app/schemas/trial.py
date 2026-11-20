@@ -127,3 +127,38 @@ class VerdictDetail(BaseModel):
     judge_votes: List[VerdictVoteDetail] = Field(default_factory=list)
     juror_final_votes: List[VerdictVoteDetail] = Field(default_factory=list)
     juror_pre_votes: List[VerdictVoteDetail] = Field(default_factory=list)
+
+
+class TurnSummary(BaseModel):
+    """Condensed turn record returned by GET /trials/{id}/turns."""
+
+    id: UUID
+    seq: int
+    speaker: str
+    text: str
+    phase: Optional[str] = None
+    action: Optional[str] = None
+    emotion: Optional[str] = None
+    struck: bool = False
+    objection_type: Optional[str] = None
+    created_at: Optional[datetime.datetime] = None
+
+
+class HumanActionRequest(BaseModel):
+    """Body for POST /trials/{id}/actions (REST alternative to WebSocket)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["human_action", "object"] = Field(
+        description="Action class: 'human_action' for turns, 'object' for objections"
+    )
+    action: Optional[str] = Field(
+        default=None, description="Lawyer action name: examine, argue, submit, pass"
+    )
+    text: Optional[str] = Field(default=None, description="Spoken line or argument text")
+    target: Optional[str] = Field(default=None, description="Target character role or exhibit")
+    objection_type: Optional[str] = Field(
+        default=None,
+        description="Objection ground: hearsay, leading, relevance, badgering, speculation",
+    )
+    reason: Optional[str] = Field(default=None, description="Detailed basis for the objection")

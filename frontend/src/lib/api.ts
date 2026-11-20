@@ -25,7 +25,21 @@ export interface TrialCreateResponse {
   id: string;
   case_id: string;
   mode: string;
+  human_role?: string | null;
   state: string;
+}
+
+export interface TurnSummary {
+  id: string;
+  seq: number;
+  speaker: string;
+  text: string;
+  phase?: string | null;
+  action?: string | null;
+  emotion?: string | null;
+  struck: boolean;
+  objection_type?: string | null;
+  created_at?: string | null;
 }
 
 export interface KeyStatus {
@@ -108,18 +122,24 @@ export async function fetchCases(): Promise<CaseSummary[]> {
 export async function createTrial(
   caseId: string,
   mode: string = "spectator",
+  humanRole?: string | null,
 ): Promise<TrialCreateResponse> {
   const token = await getGuestToken();
+  const payload: Record<string, unknown> = {
+    case_id: caseId,
+    mode: mode,
+  };
+  if (humanRole) {
+    payload.human_role = humanRole;
+  }
+
   const res = await fetch(`${API_BASE}/api/v1/trials`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      case_id: caseId,
-      mode: mode,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
@@ -128,6 +148,35 @@ export async function createTrial(
 
   const json = await res.json();
   return json.data;
+}
+
+/**
+ * Fetch persisted turns for a trial.
+ */
+export async function fetchTrialTurns(
+  trialId: string,
+  options?: { speaker?: string; struck?: boolean; limit?: number; offset?: number },
+): Promise<TurnSummary[]> {
+  const token = await getGuestToken();
+  const params = new URLSearchParams();
+  if (options?.speaker) params.set("speaker", options.speaker);
+  if (options?.struck !== undefined) params.set("struck", String(options.struck));
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_BASE}/api/v1/trials/${trialId}/turns${qs}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch trial turns: ${res.statusText}`);
+  }
+
+  const json = await res.json();
+  return json.data || [];
 }
 
 /**

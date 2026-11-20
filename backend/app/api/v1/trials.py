@@ -22,8 +22,10 @@ from app.db.session import get_db
 from app.schemas.envelope import Meta, SuccessResponse
 from app.schemas.trial import (
     AgentSummary,
+    HumanActionRequest,
     TrialCreate,
     TrialDetail,
+    TurnSummary,
     VerdictDetail,
     VerdictVoteDetail,
 )
@@ -414,3 +416,110 @@ async def get_trial_verdict(
     )
 
     return SuccessResponse(data=verdict_detail, meta=Meta(request_id=req_id))
+
+
+@router.get(
+    "/{trial_id}/turns",
+    response_model=SuccessResponse[List[TurnSummary]],
+    summary="Paginated list of persisted turns for a trial",
+)
+async def get_trial_turns(
+    trial_id: UUID,
+    request: Request,
+    speaker: Optional[str] = None,
+    struck: Optional[bool] = None,
+    limit: int = 100,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[List[TurnSummary]]:
+    """Return persisted dialogue turns for a trial, optionally filtered by speaker/struck."""
+    req_id = get_request_id(request)
+
+    # Verify trial exists
+    trial_exists = await db.get(Trial, trial_id)
+    if trial_exists is None:
+        raise AppException(
+            code=ErrorCode.NOT_FOUND,
+            message=f"Trial '{trial_id}' not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    stmt = select(Turn).where(Turn.trial_id == trial_id).order_by(Turn.seq.asc())
+    if speaker is not None:
+        stmt = stmt.where(Turn.speaker_role == speaker)
+    if struck is not None:
+        stmt = stmt.where(Turn.struck.is_(struck))
+    stmt = stmt.offset(offset).limit(max(1, min(limit, 500)))
+
+    result = await db.execute(stmt)
+    turns = list(result.scalars().all())
+
+    summaries: List[TurnSummary] = [
+        TurnSummary(
+            id=t.id,
+            seq=t.seq,
+            speaker=t.speaker_role,
+            text=t.text,
+            phase=None,
+            action=t.action,
+            emotion=t.emotion,
+            struck=bool(t.struck),
+            objection_type=(
+                t.objection.get("ground") if isinstance(t.objection, dict) else None
+            ),
+            created_at=t.created_at,
+        )
+        for t in turns
+    ]
+
+    return SuccessResponse(data=summaries, meta=Meta(request_id=req_id))
+
+
+_INTERACTIVE_MODES = {"lawyer", "judge", "juror"}
+
+
+@router.post(
+    "/{trial_id}/actions",
+    response_model=SuccessResponse[dict],
+    status_code=status.HTTP_200_OK,
+    summary="Submit a human action or objection to an active trial (REST alternative to WS)",
+)
+async def post_trial_action(
+    trial_id: UUID,
+    body: HumanActionRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[dict]:
+    """Enqueue a human action or objection into the trial's input queue.
+
+    This is a REST-based alternative to sending the action over the WebSocket.
+    The trial must be in an interactive mode (lawyer, judge, or juror).
+    """
+    from app.orchestrator.human_input import post_human_action
+
+    req_id = get_request_id(request)
+
+    trial_row = await db.get(Trial, trial_id)
+    if trial_row is None:
+        raise AppException(
+            code=ErrorCode.NOT_FOUND,
+            message=f"Trial '{trial_id}' not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    if trial_row.mode not in _INTERACTIVE_MODES:
+        raise AppException(
+            code=ErrorCode.FORBIDDEN,
+            message=(
+                f"Trial '{trial_id}' is in mode '{trial_row.mode}' "
+                "which does not accept human actions"
+            ),
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    post_human_action(trial_id, body.model_dump(exclude_none=True))
+
+    return SuccessResponse(
+        data={"queued": True, "trial_id": str(trial_id)},
+        meta=Meta(request_id=req_id),
+    )

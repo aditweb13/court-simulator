@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { LineEvent, RulingEvent, ServerEvent, VerdictEvent } from "../events/schemas";
+import { LineEvent, PromptEvent, RulingEvent, ServerEvent, VerdictEvent } from "../events/schemas";
 import { getShotForSpeaker, ShotName } from "../camera/shots";
 
 export type TrialStatus =
@@ -9,6 +9,8 @@ export type TrialStatus =
   | "paused"
   | "completed"
   | "error";
+
+export type TrialMode = "watch" | "spectator" | "lawyer" | "judge" | "juror";
 
 export interface TrialState {
   trialId: string | null;
@@ -26,6 +28,13 @@ export interface TrialState {
   autoAck: boolean;
   minReadingTimeMs: number;
 
+  // Human-lawyer mode state
+  mode: TrialMode;
+  humanRole: string | null;
+  isHumanTurn: boolean;
+  objectionQuota: number;
+  pendingPrompt: PromptEvent | null;
+
   // Actions
   setTrialId: (trialId: string | null) => void;
   setCaseId: (caseId: string | null) => void;
@@ -33,6 +42,9 @@ export interface TrialState {
   setError: (error: string | null) => void;
   setAutoAck: (autoAck: boolean) => void;
   setCameraShot: (shot: ShotName) => void;
+  setMode: (mode: TrialMode, humanRole?: string | null) => void;
+  setIsHumanTurn: (val: boolean) => void;
+  decrementObjectionQuota: () => void;
   handleServerEvent: (
     event: ServerEvent,
     sendAck?: (seq: number) => void,
@@ -57,12 +69,23 @@ export const useTrialStore = create<TrialState>((set, get) => ({
   autoAck: true,
   minReadingTimeMs: 2000,
 
+  // Human lawyer mode state
+  mode: "spectator",
+  humanRole: null,
+  isHumanTurn: false,
+  objectionQuota: 3,
+  pendingPrompt: null,
+
   setTrialId: (trialId) => set({ trialId }),
   setCaseId: (caseId) => set({ caseId }),
   setStatus: (status) => set({ status }),
   setError: (error) => set({ error, status: error ? "error" : get().status }),
   setAutoAck: (autoAck) => set({ autoAck }),
   setCameraShot: (shot) => set({ currentCameraShot: shot }),
+  setMode: (mode, humanRole = null) => set({ mode, humanRole }),
+  setIsHumanTurn: (val) => set({ isHumanTurn: val }),
+  decrementObjectionQuota: () =>
+    set((state) => ({ objectionQuota: Math.max(0, state.objectionQuota - 1) })),
 
   handleServerEvent: (event: ServerEvent, sendAck?: (seq: number) => void) => {
     switch (event.type) {
@@ -118,6 +141,14 @@ export const useTrialStore = create<TrialState>((set, get) => ({
           status: "completed",
           trialState: "VERDICT",
           currentCameraShot: "jury",
+        });
+        break;
+      }
+
+      case "prompt": {
+        set({
+          isHumanTurn: true,
+          pendingPrompt: event,
         });
         break;
       }
@@ -187,6 +218,11 @@ export const useTrialStore = create<TrialState>((set, get) => ({
       eventQueue: [],
       transcript: [],
       verdict: null,
+      mode: "spectator",
+      humanRole: null,
+      isHumanTurn: false,
+      objectionQuota: 3,
+      pendingPrompt: null,
     }),
 }));
 

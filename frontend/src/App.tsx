@@ -5,6 +5,7 @@ import { TrialControls } from "./ui/TrialControls";
 import { Transcript } from "./ui/Transcript";
 import { VerdictScreen } from "./ui/VerdictScreen";
 import { AdminPage } from "./ui/AdminPage";
+import { LawyerPanel } from "./ui/LawyerPanel";
 import { useTrialStore } from "./store/trialStore";
 
 export default function App() {
@@ -157,9 +158,10 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Column: Official Transcript Stream */}
-          <div className="lg:col-span-8 flex flex-col">
+          {/* Right Column: Official Transcript Stream & Interactive Lawyer Panel */}
+          <div className="lg:col-span-8 flex flex-col gap-4">
             <Transcript className="h-[460px]" />
+            <LawyerPanel />
           </div>
         </section>
       </main>

@@ -79,13 +79,13 @@ Each task fits in one agent session (under about 2 hours). `[Pn]` shows the phas
 - [x] [P8] Metrics report: truth-match, cost, isolation violations, disagreement
 - [x] [P8] Bias lab: batch runs with different juror persona mixes
 - [ ] [P4] Optional key_facts list per timeline event for case schema
-- [ ] [P8] `GET /trials/{id}/turns` endpoint
+- [x] [P8] `GET /trials/{id}/turns` endpoint
 - [ ] [P8] Replay endpoint streaming stored turns
 - [ ] [P8] Replay UI with a play and pause control
 - [ ] [P8] Browser text-to-speech with per-role voices and a voice toggle
-- [ ] [P8] Human lawyer mode: prompt events and typed questions
-- [ ] [P8] Objection button with keyboard shortcut and quota display
-- [ ] [P8] Objection window for human lawyer mode
+- [x] [P8] Human lawyer mode: prompt events and typed questions
+- [x] [P8] Objection button with keyboard shortcut and quota display
+- [x] [P8] Objection window for human lawyer mode
 - [ ] [P8] Play as judge mode
 - [ ] [P8] Play as juror mode
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "../lib/utils";
-import { useTrialStore } from "../store/trialStore";
+import { TrialMode, useTrialStore } from "../store/trialStore";
 import { trialWs } from "../events/trialWs";
 import { CaseSummary, createTrial, fetchCases, getGuestToken } from "../lib/api";
 
@@ -15,9 +15,12 @@ export function TrialControls({ className }: TrialControlsProps) {
   const error = useTrialStore((state) => state.error);
   const setStatus = useTrialStore((state) => state.setStatus);
   const setError = useTrialStore((state) => state.setError);
+  const setStoreMode = useTrialStore((state) => state.setMode);
 
   const [cases, setCases] = useState<CaseSummary[]>([]);
   const [selectedCaseId, setSelectedCaseId] = useState<string>("case_001");
+  const [selectedMode, setSelectedMode] = useState<string>("spectator");
+  const [humanRole, setHumanRole] = useState<string>("prosecutor");
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -44,7 +47,9 @@ export function TrialControls({ className }: TrialControlsProps) {
 
     try {
       const token = await getGuestToken();
-      const trial = await createTrial(selectedCaseId, "spectator");
+      const actualRole = selectedMode === "lawyer" ? humanRole : null;
+      setStoreMode(selectedMode as TrialMode, actualRole);
+      const trial = await createTrial(selectedCaseId, selectedMode, actualRole);
       trialWs.connect(trial.id, token);
     } catch (err) {
       console.error("Start trial error:", err);
@@ -140,6 +145,46 @@ export function TrialControls({ className }: TrialControlsProps) {
               )}
             </select>
           </div>
+
+          <div>
+            <label
+              htmlFor="mode-select"
+              className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
+            >
+              Mode of Participation:
+            </label>
+            <select
+              id="mode-select"
+              value={selectedMode}
+              onChange={(e) => setSelectedMode(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer"
+            >
+              <option value="spectator">Spectator / Watch Simulation</option>
+              <option value="lawyer">Human Lawyer Mode (Interactive)</option>
+              <option value="judge">Play as Judge</option>
+              <option value="juror">Play as Juror</option>
+            </select>
+          </div>
+
+          {selectedMode === "lawyer" && (
+            <div>
+              <label
+                htmlFor="role-select"
+                className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5"
+              >
+                Counsel Role:
+              </label>
+              <select
+                id="role-select"
+                value={humanRole}
+                onChange={(e) => setHumanRole(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-[var(--background)] border border-[var(--border)] rounded-[var(--radius-sm)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer"
+              >
+                <option value="prosecutor">Public Prosecutor</option>
+                <option value="defense">Defense Counsel</option>
+              </select>
+            </div>
+          )}
 
           <button
             onClick={handleStartTrial}

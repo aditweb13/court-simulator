@@ -4,7 +4,7 @@ Update this file at the end of every session. Read it at the start of every sess
 
 ## Current Phase
 
-Phase 8: Secondary features & evaluation (Batch B completed -> Batch C next)
+Phase 8: Secondary features & evaluation (Batch C completed -> Batch D next)
 
 ## Active Goal
 
