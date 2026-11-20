@@ -41,6 +41,10 @@ def test_case_pydantic_schema_valid() -> None:
                     "description": "Rajesh slipped arsenic into victim's beverage",
                     "location": "Kitchen",
                     "actors": ["Rajesh Sharma"],
+                    "key_facts": [
+                        "Arsenic bottle was retrieved from kitchen cabinet",
+                        "Rajesh was alone in the kitchen for 4 minutes",
+                    ],
                 },
             ],
         },
@@ -74,6 +78,11 @@ def test_case_pydantic_schema_valid() -> None:
     assert schema.slug == "state-v-sharma-2024"
     assert schema.truth.culprit == "Rajesh Sharma"
     assert len(schema.truth.timeline) == 2
+    assert schema.truth.timeline[0].key_facts is None
+    assert schema.truth.timeline[1].key_facts == [
+        "Arsenic bottle was retrieved from kitchen cabinet",
+        "Rajesh was alone in the kitchen for 4 minutes",
+    ]
     assert len(schema.evidence) == 2
     assert len(schema.witnesses) == 1
     assert schema.witnesses[0].reliability == 0.95

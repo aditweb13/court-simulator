@@ -22,6 +22,7 @@ class WitnessMemoryItem:
     location: str
     observation: str
     other_actors: List[str] = field(default_factory=list)
+    key_facts: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -70,7 +71,14 @@ class WitnessMemory:
                     if item.other_actors
                     else ""
                 )
-                lines.append(f"- At {item.time} ({item.location}): {item.observation}{actors_str}")
+                facts_str = (
+                    f" [Key facts: {'; '.join(item.key_facts)}]"
+                    if item.key_facts
+                    else ""
+                )
+                lines.append(
+                    f"- At {item.time} ({item.location}): {item.observation}{actors_str}{facts_str}"
+                )
 
         if include_hides and self.hides:
             lines.append("\nSecrets you are trying to conceal (do not disclose unless cornered):")
@@ -194,12 +202,14 @@ def build_witness_memory(
             e_loc = str(event["location"])
             e_desc = str(event["description"])
             e_actors = list(event.get("actors", []))
+            e_key_facts = list(event.get("key_facts") or [])
         else:
             e_id = event.id
             e_time = event.time
             e_loc = event.location
             e_desc = event.description
             e_actors = list(event.actors)
+            e_key_facts = list(event.key_facts or [])
 
         # Strict isolation check: only include witnessed events
         if e_id not in w_saw_ids:
@@ -221,6 +231,7 @@ def build_witness_memory(
                 location=e_loc,
                 observation=first_person_desc,
                 other_actors=other_actors,
+                key_facts=e_key_facts,
             )
         )
 

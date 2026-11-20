@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { LineEvent, PromptEvent, RulingEvent, ServerEvent, VerdictEvent } from "../events/schemas";
 import { getShotForSpeaker, ShotName } from "../camera/shots";
+import { browserTTS } from "../audio/tts";
 
 export type TrialStatus =
   | "idle"
@@ -34,6 +35,7 @@ export interface TrialState {
   isHumanTurn: boolean;
   objectionQuota: number;
   pendingPrompt: PromptEvent | null;
+  ttsEnabled: boolean;
 
   // Actions
   setTrialId: (trialId: string | null) => void;
@@ -45,6 +47,7 @@ export interface TrialState {
   setMode: (mode: TrialMode, humanRole?: string | null) => void;
   setIsHumanTurn: (val: boolean) => void;
   decrementObjectionQuota: () => void;
+  setTTSEnabled: (enabled: boolean) => void;
   handleServerEvent: (
     event: ServerEvent,
     sendAck?: (seq: number) => void,
@@ -75,6 +78,7 @@ export const useTrialStore = create<TrialState>((set, get) => ({
   isHumanTurn: false,
   objectionQuota: 3,
   pendingPrompt: null,
+  ttsEnabled: false,
 
   setTrialId: (trialId) => set({ trialId }),
   setCaseId: (caseId) => set({ caseId }),
@@ -86,6 +90,10 @@ export const useTrialStore = create<TrialState>((set, get) => ({
   setIsHumanTurn: (val) => set({ isHumanTurn: val }),
   decrementObjectionQuota: () =>
     set((state) => ({ objectionQuota: Math.max(0, state.objectionQuota - 1) })),
+  setTTSEnabled: (enabled) => {
+    browserTTS.setEnabled(enabled);
+    set({ ttsEnabled: enabled });
+  },
 
   handleServerEvent: (event: ServerEvent, sendAck?: (seq: number) => void) => {
     switch (event.type) {
@@ -108,6 +116,10 @@ export const useTrialStore = create<TrialState>((set, get) => ({
             status: "running",
             transcript: [...state.transcript, event],
           }));
+
+          if (get().ttsEnabled) {
+            browserTTS.speak(event.speaker, event.text);
+          }
 
           if (get().autoAck && sendAck) {
             // Dynamic pacing: ~35ms per character, clamped between minReadingTimeMs and 6000ms
@@ -186,6 +198,10 @@ export const useTrialStore = create<TrialState>((set, get) => ({
         transcript: [...state.transcript, nextLine],
       }));
 
+      if (get().ttsEnabled) {
+        browserTTS.speak(nextLine.speaker, nextLine.text);
+      }
+
       if (autoAck && sendAck) {
         const delay = Math.min(
           Math.max(nextLine.text.length * 35, minReadingTimeMs),
@@ -204,7 +220,8 @@ export const useTrialStore = create<TrialState>((set, get) => ({
     }
   },
 
-  reset: () =>
+  reset: () => {
+    browserTTS.cancel();
     set({
       trialId: null,
       caseId: null,
@@ -223,6 +240,7 @@ export const useTrialStore = create<TrialState>((set, get) => ({
       isHumanTurn: false,
       objectionQuota: 3,
       pendingPrompt: null,
-    }),
+    });
+  },
 }));
 

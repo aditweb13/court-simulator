@@ -16,6 +16,10 @@ class TimelineEvent(BaseModel):
     description: str = Field(description="Factual description of what occurred")
     location: str = Field(description="Physical location of the event")
     actors: List[str] = Field(default_factory=list, description="Characters involved or present")
+    key_facts: Optional[List[str]] = Field(
+        default=None,
+        description="Optional list of key factual propositions established by this event",
+    )
 
 
 class TruthData(BaseModel):

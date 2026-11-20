@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -522,4 +525,93 @@ async def post_trial_action(
     return SuccessResponse(
         data={"queued": True, "trial_id": str(trial_id)},
         meta=Meta(request_id=req_id),
+    )
+
+
+
+@router.get(
+    "/{trial_id}/replay",
+    summary="Stream stored trial turns as Server-Sent Events (SSE) for replay",
+)
+async def replay_trial(
+    trial_id: UUID,
+    request: Request,
+    speed: float = Query(default=1.0, ge=0.1, le=10.0, description="Playback speed multiplier"),
+    instant: bool = Query(default=False, description="Stream all turns immediately without delay"),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    """Stream recorded dialogue turns and trial progression as an SSE event stream."""
+    req_id = get_request_id(request)
+    _ = req_id
+
+    trial_row = await db.get(Trial, trial_id)
+    if trial_row is None:
+        raise AppException(
+            code=ErrorCode.NOT_FOUND,
+            message=f"Trial '{trial_id}' not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+
+    stmt = select(Turn).where(Turn.trial_id == trial_id).order_by(Turn.seq.asc())
+    turns_res = await db.execute(stmt)
+    turns = list(turns_res.scalars().all())
+
+    verdict_row = await db.get(Verdict, trial_id)
+
+    async def event_generator():
+        setup_event = {"type": "state", "state": "SETUP"}
+        yield f"event: state\ndata: {json.dumps(setup_event)}\n\n"
+
+        for turn in turns:
+            if await request.is_disconnected():
+                break
+
+            line_payload = {
+                "type": "line",
+                "seq": turn.seq,
+                "speaker": turn.speaker_role,
+                "text": turn.text,
+                "action": turn.action,
+                "emotion": turn.emotion,
+                "camera": turn.camera or "wide",
+            }
+            yield f"event: line\ndata: {json.dumps(line_payload)}\n\n"
+
+            if turn.struck and isinstance(turn.objection, dict):
+                ruling_payload = {
+                    "type": "ruling",
+                    "seq": turn.seq,
+                    "objection_type": turn.objection.get("ground", "objection"),
+                    "ruling": "sustained",
+                    "struck": True,
+                    "reason": turn.objection.get("reason"),
+                }
+                yield f"event: ruling\ndata: {json.dumps(ruling_payload)}\n\n"
+
+            if not instant:
+                char_delay = max(0.02, min(len(turn.text) * 0.005, 0.2)) / max(0.1, speed)
+                await asyncio.sleep(char_delay)
+
+        if verdict_row:
+            verdict_payload = {
+                "type": "verdict",
+                "outcome": verdict_row.outcome,
+                "score": float(verdict_row.score),
+                "threshold": float(verdict_row.threshold),
+                "disagreement": float(verdict_row.disagreement),
+                "matches_truth": verdict_row.matches_truth,
+            }
+            yield f"event: verdict\ndata: {json.dumps(verdict_payload)}\n\n"
+
+        finished_event = {"type": "state", "state": "FINISHED"}
+        yield f"event: state\ndata: {json.dumps(finished_event)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )

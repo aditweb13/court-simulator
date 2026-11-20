@@ -6,6 +6,7 @@ import { Transcript } from "./ui/Transcript";
 import { VerdictScreen } from "./ui/VerdictScreen";
 import { AdminPage } from "./ui/AdminPage";
 import { LawyerPanel } from "./ui/LawyerPanel";
+import { ReplayControls } from "./ui/ReplayControls";
 import { useTrialStore } from "./store/trialStore";
 
 export default function App() {
@@ -17,6 +18,9 @@ export default function App() {
   );
   const trialState = useTrialStore((state) => state.trialState);
   const status = useTrialStore((state) => state.status);
+  const ttsEnabled = useTrialStore((state) => state.ttsEnabled);
+  const setTTSEnabled = useTrialStore((state) => state.setTTSEnabled);
+  const [showReplay, setShowReplay] = useState<boolean>(false);
 
   useEffect(() => {
     const onPopState = () => {
@@ -75,6 +79,33 @@ export default function App() {
               {status === "running" ? trialState : status}
             </span>
           </div>
+
+          <button
+            onClick={() => setTTSEnabled(!ttsEnabled)}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium rounded-[var(--radius-md)] border transition-colors cursor-pointer",
+              ttsEnabled
+                ? "bg-[var(--primary)] text-white border-transparent"
+                : "border-[var(--border)] hover:bg-black/5 dark:hover:bg-white/5",
+            )}
+            aria-label={ttsEnabled ? "Mute text-to-speech audio" : "Enable text-to-speech audio"}
+            title="Toggle Text-to-Speech Courtroom Dialogue"
+          >
+            {ttsEnabled ? "🔊 Voice: ON" : "🔈 Voice: OFF"}
+          </button>
+
+          <button
+            onClick={() => setShowReplay((prev) => !prev)}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium rounded-[var(--radius-md)] border transition-colors cursor-pointer",
+              showReplay
+                ? "bg-amber-600 text-white border-transparent"
+                : "border-[var(--border)] hover:bg-black/5 dark:hover:bg-white/5",
+            )}
+            aria-label="Toggle trial replay controls"
+          >
+            📹 Replay
+          </button>
 
           <button
             onClick={() => navigate(route === "/admin" ? "/" : "/admin")}
@@ -141,6 +172,7 @@ export default function App() {
         >
           {/* Left Column: Trial Controls & Case Docket */}
           <div className="lg:col-span-4 flex flex-col gap-4">
+            {showReplay && <ReplayControls onClose={() => setShowReplay(false)} />}
             <TrialControls />
 
             <div className="bg-[var(--surface)] border border-[var(--border)] rounded-[var(--radius-lg)] p-4 text-xs space-y-2 text-[var(--text-secondary)]">

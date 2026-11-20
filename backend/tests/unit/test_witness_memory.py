@@ -75,3 +75,34 @@ def test_build_witness_memory_filters_unseen_events():
     assert "poison" not in prompt
     assert "Foyer" in prompt
     assert "Study" in prompt
+
+
+def test_build_witness_memory_with_key_facts():
+    timeline = [
+        TimelineEvent(
+            id=0,
+            time="21:15",
+            location="Corridor",
+            description="Sunita Bai saw Vikram leaving the study.",
+            actors=["Sunita Bai", "Vikram Malhotra"],
+            key_facts=["Vikram was walking briskly", "Vikram carried a leather pouch"],
+        ),
+    ]
+
+    witness = WitnessData(
+        name="Sunita Bai",
+        saw_event_ids=[0],
+        reliability=0.95,
+        hides=[],
+        persona={"occupation": "Housekeeper"},
+    )
+
+    memory = build_witness_memory(witness, timeline)
+    assert len(memory.memories) == 1
+    assert memory.memories[0].key_facts == [
+        "Vikram was walking briskly",
+        "Vikram carried a leather pouch",
+    ]
+
+    prompt = memory.format_for_prompt()
+    assert "Key facts: Vikram was walking briskly" in prompt
