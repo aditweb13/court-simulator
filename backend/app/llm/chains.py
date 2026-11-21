@@ -22,24 +22,24 @@ class ChainLink:
     model: str
 
 
-_DEFAULT_OLLAMA_LINK = ChainLink(provider="ollama", model="llama3.2:latest")
-
 _DEFAULT_CHAINS: Dict[str, str] = {
     "strong": (
         "groq|llama-3.3-70b-versatile,"
         "gemini|gemini-2.0-flash,"
-        "openrouter|meta-llama/llama-3.3-70b-instruct,"
-        "ollama|llama3.2:latest"
+        "openrouter|meta-llama/llama-3.3-70b-instruct"
     ),
-    "mid": "groq|llama-3.1-8b-instant,gemini|gemini-2.0-flash,ollama|llama3.2:latest",
-    "small": "groq|llama-3.1-8b-instant,ollama|llama3.2:latest",
+    "mid": "groq|llama-3.1-8b-instant,gemini|gemini-2.0-flash",
+    "small": "groq|llama-3.1-8b-instant",
 }
 
 
 def parse_chain(chain_str: str) -> List[ChainLink]:
     """Parse a comma-separated 'provider|model' string into ChainLinks.
 
-    Ensures that Ollama is always the terminal link in the chain.
+    Parses the chain string into ordered links. Ollama is NOT automatically
+    appended — it must be explicitly configured in the chain string since
+    Ollama is not installed locally. If Ollama is configured but not
+    available, it will fail and the chain will exhaust without it.
     """
     links: List[ChainLink] = []
     if chain_str and chain_str.strip():
@@ -52,15 +52,6 @@ def parse_chain(chain_str: str) -> List[ChainLink]:
             model = model.strip()
             if provider and model:
                 links.append(ChainLink(provider=provider, model=model))
-
-    # Guarantee Ollama is the terminal link
-    if not any(link.provider == "ollama" for link in links):
-        links.append(_DEFAULT_OLLAMA_LINK)
-    else:
-        # Move ollama to the end if present earlier
-        ollama_links = [lnk for lnk in links if lnk.provider == "ollama"]
-        non_ollama_links = [lnk for lnk in links if lnk.provider != "ollama"]
-        links = non_ollama_links + [ollama_links[-1]]
 
     return links
 
